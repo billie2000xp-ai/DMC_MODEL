@@ -1,0 +1,483 @@
+======================================== START ========================================
+-------------------- Base Message -----------------------------------------------------
+hbm3 12800Mbps, x32, DMC Data Width: 256, CKR: 4.0
+Current time: 93289, tDFI: 0.6250 ns, DMC Total bytes: 2551808, DDR Total bytes: 2546816
+-------------------- DFI Performance Statistics (GB/s) --------------------------------
+Data Read bandwidth   : 0.00   | Data Write bandwidth   : 43.68  | Data Total bandwidth  : 43.68
+ECC Read bandwidth    : 0.00   | ECC Write bandwidth    : 0.00   | ECC Total bandwidth   : 0.00
+RMW Read bandwidth    : 0.00   | RMW Total bandwidth    : 0.00
+Total Read bandwidth  : 0.00   | Total Write bandwidth  : 43.68  | Total bandwidth       : 43.68
+Total Rank0 bandwidth : 43.68  | Total Rank0 efficiency : 85.31%
+Data efficiency       : 85.31% | ECC efficiency         : 0.00 % | RMW efficiency         : 0.00 %
+DFI Total efficiency  : 85.31%
+-------------------- DMC Performance Statistics (GB/s) --------------------------------
+Dmc Read bandwidth    : 0.00   | Dmc Write bandwidth    : 43.77  | Dmc Total bandwidth   : 43.77 
+Dmc Read efficiency   : 0.00 % | Dmc Write efficiency   : 85.48% | Dmc Total efficiency  : 85.48%
+-------------------- Rank LP Time Statistics (DFI Clock) ------------------------------
+Rank0 Current PdTime      : 0            | 
+Rank0 Current AsrefTime   : 0            | 
+Rank0 Current SrpdTime    : 0            | 
+Rank0 Current WakeUpTime  : 93289        | 
+Rank0 Total PdTime        : 0            | 
+Rank0 Total AsrefTime     : 0            | 
+Rank0 Total SrpdTime      : 0            | 
+Rank0 Total WakeUpTime    : 93289        | 
+Rank0 Total PdEnterCnt    : 0            | 
+Rank0 Total PdExitCnt     : 0            | 
+Rank0 Total AsrefEnterCnt : 0            | 
+Rank0 Total AsrefExitCnt  : 0            | 
+Phy LP Cnt(Close Clock)   : 0            |
+Rank0 Total Idle ratio    : 4.97         | Rank0 Total act ratio     : 24.47        | 
+-------------------- Task Statistics (PTC Command Number) -----------------------------
+Rank0 read      : 0        | Rank0 total read  : 0        | 
+Rank0 write     : 39809    | Rank0 total write : 39809    | 
+Rank0 r+w       : 39809    | Rank0 total r+w   : 39809    | 
+Read            : 0        | Total reads       : 0        | Write           : 39809    | Total writes      : 39809    |
+Total           : 39809    | Total commands    : 39809    | DMC             : 39872    | Total pre_act     : 0        |
+Total 32B Read  : 0        | Total 32B Write   : 0        | Total 64B Read  : 0        | Total 64B Write   : 39809    |
+Total 128B Read : 0        | Total 128B Write  : 0        | Total 256B Read : 0        | Total 256B Write  : 0        |
+IECC            : 0        | No IECC           : 39872    |
+Bank0  read : 0      | write : 830    | total : 830    | 
+Bank1  read : 0      | write : 829    | total : 829    | 
+Bank2  read : 0      | write : 830    | total : 830    | 
+Bank3  read : 0      | write : 829    | total : 829    | 
+Bank4  read : 0      | write : 831    | total : 831    | 
+Bank5  read : 0      | write : 830    | total : 830    | 
+Bank6  read : 0      | write : 830    | total : 830    | 
+Bank7  read : 0      | write : 829    | total : 829    | 
+Bank8  read : 0      | write : 830    | total : 830    | 
+Bank9  read : 0      | write : 830    | total : 830    | 
+Bank10 read : 0      | write : 830    | total : 830    | 
+Bank11 read : 0      | write : 829    | total : 829    | 
+Bank12 read : 0      | write : 830    | total : 830    | 
+Bank13 read : 0      | write : 829    | total : 829    | 
+Bank14 read : 0      | write : 829    | total : 829    | 
+Bank15 read : 0      | write : 829    | total : 829    | 
+Bank16 read : 0      | write : 829    | total : 829    | 
+Bank17 read : 0      | write : 830    | total : 830    | 
+Bank18 read : 0      | write : 830    | total : 830    | 
+Bank19 read : 0      | write : 829    | total : 829    | 
+Bank20 read : 0      | write : 830    | total : 830    | 
+Bank21 read : 0      | write : 830    | total : 830    | 
+Bank22 read : 0      | write : 829    | total : 829    | 
+Bank23 read : 0      | write : 829    | total : 829    | 
+Bank24 read : 0      | write : 830    | total : 830    | 
+Bank25 read : 0      | write : 829    | total : 829    | 
+Bank26 read : 0      | write : 829    | total : 829    | 
+Bank27 read : 0      | write : 829    | total : 829    | 
+Bank28 read : 0      | write : 830    | total : 830    | 
+Bank29 read : 0      | write : 829    | total : 829    | 
+Bank30 read : 0      | write : 829    | total : 829    | 
+Bank31 read : 0      | write : 829    | total : 829    | 
+Bank32 read : 0      | write : 829    | total : 829    | 
+Bank33 read : 0      | write : 829    | total : 829    | 
+Bank34 read : 0      | write : 829    | total : 829    | 
+Bank35 read : 0      | write : 829    | total : 829    | 
+Bank36 read : 0      | write : 830    | total : 830    | 
+Bank37 read : 0      | write : 830    | total : 830    | 
+Bank38 read : 0      | write : 829    | total : 829    | 
+Bank39 read : 0      | write : 828    | total : 828    | 
+Bank40 read : 0      | write : 830    | total : 830    | 
+Bank41 read : 0      | write : 829    | total : 829    | 
+Bank42 read : 0      | write : 829    | total : 829    | 
+Bank43 read : 0      | write : 829    | total : 829    | 
+Bank44 read : 0      | write : 829    | total : 829    | 
+Bank45 read : 0      | write : 828    | total : 828    | 
+Bank46 read : 0      | write : 829    | total : 829    | 
+Bank47 read : 0      | write : 829    | total : 829    | 
+-------------------- Task Statistics (PERF Command Number) -----------------------------
+Bank0  read : 0      | write : 831    | 
+Bank1  read : 0      | write : 831    | 
+Bank2  read : 0      | write : 831    | 
+Bank3  read : 0      | write : 830    | 
+Bank4  read : 0      | write : 831    | 
+Bank5  read : 0      | write : 831    | 
+Bank6  read : 0      | write : 831    | 
+Bank7  read : 0      | write : 830    | 
+Bank8  read : 0      | write : 831    | 
+Bank9  read : 0      | write : 831    | 
+Bank10 read : 0      | write : 831    | 
+Bank11 read : 0      | write : 830    | 
+Bank12 read : 0      | write : 831    | 
+Bank13 read : 0      | write : 831    | 
+Bank14 read : 0      | write : 831    | 
+Bank15 read : 0      | write : 830    | 
+Bank16 read : 0      | write : 831    | 
+Bank17 read : 0      | write : 831    | 
+Bank18 read : 0      | write : 831    | 
+Bank19 read : 0      | write : 830    | 
+Bank20 read : 0      | write : 831    | 
+Bank21 read : 0      | write : 831    | 
+Bank22 read : 0      | write : 831    | 
+Bank23 read : 0      | write : 830    | 
+Bank24 read : 0      | write : 831    | 
+Bank25 read : 0      | write : 831    | 
+Bank26 read : 0      | write : 831    | 
+Bank27 read : 0      | write : 830    | 
+Bank28 read : 0      | write : 831    | 
+Bank29 read : 0      | write : 831    | 
+Bank30 read : 0      | write : 831    | 
+Bank31 read : 0      | write : 830    | 
+Bank32 read : 0      | write : 831    | 
+Bank33 read : 0      | write : 831    | 
+Bank34 read : 0      | write : 830    | 
+Bank35 read : 0      | write : 830    | 
+Bank36 read : 0      | write : 831    | 
+Bank37 read : 0      | write : 831    | 
+Bank38 read : 0      | write : 830    | 
+Bank39 read : 0      | write : 830    | 
+Bank40 read : 0      | write : 831    | 
+Bank41 read : 0      | write : 831    | 
+Bank42 read : 0      | write : 830    | 
+Bank43 read : 0      | write : 830    | 
+Bank44 read : 0      | write : 831    | 
+Bank45 read : 0      | write : 831    | 
+Bank46 read : 0      | write : 830    | 
+Bank47 read : 0      | write : 830    | 
+Rank0  Bg0  read : 0      | write : 3323   | 
+Rank0  Bg1  read : 0      | write : 3323   | 
+Rank0  Bg2  read : 0      | write : 3323   | 
+Rank0  Bg3  read : 0      | write : 3323   | 
+Rank0  Bg4  read : 0      | write : 3323   | 
+Rank0  Bg5  read : 0      | write : 3323   | 
+Rank0  Bg6  read : 0      | write : 3323   | 
+Rank0  Bg7  read : 0      | write : 3323   | 
+Rank0  Bg8  read : 0      | write : 3322   | 
+Rank0  Bg9  read : 0      | write : 3322   | 
+Rank0  Bg10 read : 0      | write : 3322   | 
+Rank0  Bg11 read : 0      | write : 3322   | 
+-------------------- Perf2Ptc schedule (Counter) ---------------------------
+Bank0  read : 0      | write : 830    | 
+Bank1  read : 0      | write : 829    | 
+Bank2  read : 0      | write : 830    | 
+Bank3  read : 0      | write : 829    | 
+Bank4  read : 0      | write : 831    | 
+Bank5  read : 0      | write : 830    | 
+Bank6  read : 0      | write : 830    | 
+Bank7  read : 0      | write : 829    | 
+Bank8  read : 0      | write : 830    | 
+Bank9  read : 0      | write : 830    | 
+Bank10 read : 0      | write : 830    | 
+Bank11 read : 0      | write : 829    | 
+Bank12 read : 0      | write : 830    | 
+Bank13 read : 0      | write : 829    | 
+Bank14 read : 0      | write : 829    | 
+Bank15 read : 0      | write : 829    | 
+Bank16 read : 0      | write : 829    | 
+Bank17 read : 0      | write : 830    | 
+Bank18 read : 0      | write : 830    | 
+Bank19 read : 0      | write : 829    | 
+Bank20 read : 0      | write : 830    | 
+Bank21 read : 0      | write : 830    | 
+Bank22 read : 0      | write : 829    | 
+Bank23 read : 0      | write : 829    | 
+Bank24 read : 0      | write : 830    | 
+Bank25 read : 0      | write : 829    | 
+Bank26 read : 0      | write : 829    | 
+Bank27 read : 0      | write : 829    | 
+Bank28 read : 0      | write : 830    | 
+Bank29 read : 0      | write : 829    | 
+Bank30 read : 0      | write : 829    | 
+Bank31 read : 0      | write : 829    | 
+Bank32 read : 0      | write : 829    | 
+Bank33 read : 0      | write : 829    | 
+Bank34 read : 0      | write : 829    | 
+Bank35 read : 0      | write : 829    | 
+Bank36 read : 0      | write : 830    | 
+Bank37 read : 0      | write : 830    | 
+Bank38 read : 0      | write : 829    | 
+Bank39 read : 0      | write : 828    | 
+Bank40 read : 0      | write : 830    | 
+Bank41 read : 0      | write : 829    | 
+Bank42 read : 0      | write : 829    | 
+Bank43 read : 0      | write : 829    | 
+Bank44 read : 0      | write : 829    | 
+Bank45 read : 0      | write : 828    | 
+Bank46 read : 0      | write : 829    | 
+Bank47 read : 0      | write : 829    | 
+Rank0  Bg0  read : 0      | write : 3318   | 
+Rank0  Bg1  read : 0      | write : 3320   | 
+Rank0  Bg2  read : 0      | write : 3319   | 
+Rank0  Bg3  read : 0      | write : 3317   | 
+Rank0  Bg4  read : 0      | write : 3318   | 
+Rank0  Bg5  read : 0      | write : 3318   | 
+Rank0  Bg6  read : 0      | write : 3317   | 
+Rank0  Bg7  read : 0      | write : 3317   | 
+Rank0  Bg8  read : 0      | write : 3316   | 
+Rank0  Bg9  read : 0      | write : 3317   | 
+Rank0  Bg10 read : 0      | write : 3317   | 
+Rank0  Bg11 read : 0      | write : 3315   | 
+-------------------- Ptc schedule (Counter) ---------------------------
+Bank0  read : 0      | write : 830    | 
+Bank1  read : 0      | write : 829    | 
+Bank2  read : 0      | write : 829    | 
+Bank3  read : 0      | write : 829    | 
+Bank4  read : 0      | write : 831    | 
+Bank5  read : 0      | write : 829    | 
+Bank6  read : 0      | write : 829    | 
+Bank7  read : 0      | write : 829    | 
+Bank8  read : 0      | write : 830    | 
+Bank9  read : 0      | write : 829    | 
+Bank10 read : 0      | write : 829    | 
+Bank11 read : 0      | write : 829    | 
+Bank12 read : 0      | write : 830    | 
+Bank13 read : 0      | write : 829    | 
+Bank14 read : 0      | write : 829    | 
+Bank15 read : 0      | write : 829    | 
+Bank16 read : 0      | write : 829    | 
+Bank17 read : 0      | write : 829    | 
+Bank18 read : 0      | write : 829    | 
+Bank19 read : 0      | write : 828    | 
+Bank20 read : 0      | write : 829    | 
+Bank21 read : 0      | write : 830    | 
+Bank22 read : 0      | write : 829    | 
+Bank23 read : 0      | write : 829    | 
+Bank24 read : 0      | write : 830    | 
+Bank25 read : 0      | write : 828    | 
+Bank26 read : 0      | write : 829    | 
+Bank27 read : 0      | write : 829    | 
+Bank28 read : 0      | write : 830    | 
+Bank29 read : 0      | write : 829    | 
+Bank30 read : 0      | write : 829    | 
+Bank31 read : 0      | write : 829    | 
+Bank32 read : 0      | write : 829    | 
+Bank33 read : 0      | write : 828    | 
+Bank34 read : 0      | write : 828    | 
+Bank35 read : 0      | write : 829    | 
+Bank36 read : 0      | write : 829    | 
+Bank37 read : 0      | write : 829    | 
+Bank38 read : 0      | write : 829    | 
+Bank39 read : 0      | write : 828    | 
+Bank40 read : 0      | write : 830    | 
+Bank41 read : 0      | write : 829    | 
+Bank42 read : 0      | write : 829    | 
+Bank43 read : 0      | write : 828    | 
+Bank44 read : 0      | write : 829    | 
+Bank45 read : 0      | write : 828    | 
+Bank46 read : 0      | write : 829    | 
+Bank47 read : 0      | write : 828    | 
+Ptc schedule bank cmd stddev : 0.63   | mean : 829.02 | min/max : 828/831
+Rank0  Bg0  read : 0      | write : 3317   | 
+Rank0  Bg1  read : 0      | write : 3318   | 
+Rank0  Bg2  read : 0      | write : 3317   | 
+Rank0  Bg3  read : 0      | write : 3317   | 
+Rank0  Bg4  read : 0      | write : 3315   | 
+Rank0  Bg5  read : 0      | write : 3317   | 
+Rank0  Bg6  read : 0      | write : 3316   | 
+Rank0  Bg7  read : 0      | write : 3317   | 
+Rank0  Bg8  read : 0      | write : 3314   | 
+Rank0  Bg9  read : 0      | write : 3315   | 
+Rank0  Bg10 read : 0      | write : 3316   | 
+Rank0  Bg11 read : 0      | write : 3314   | 
+-------------------- Row Conflict Precharge Count (Counter) ---------------------------
+Bank0  RowConfPre    : 0      | Bank1  RowConfPre    : 0      | Bank2  RowConfPre    : 0      | Bank3  RowConfPre    : 0      | 
+Bank4  RowConfPre    : 0      | Bank5  RowConfPre    : 0      | Bank6  RowConfPre    : 0      | Bank7  RowConfPre    : 0      | 
+Bank8  RowConfPre    : 0      | Bank9  RowConfPre    : 0      | Bank10 RowConfPre    : 0      | Bank11 RowConfPre    : 0      | 
+Bank12 RowConfPre    : 0      | Bank13 RowConfPre    : 0      | Bank14 RowConfPre    : 0      | Bank15 RowConfPre    : 0      | 
+Bank16 RowConfPre    : 0      | Bank17 RowConfPre    : 0      | Bank18 RowConfPre    : 0      | Bank19 RowConfPre    : 0      | 
+Bank20 RowConfPre    : 0      | Bank21 RowConfPre    : 0      | Bank22 RowConfPre    : 0      | Bank23 RowConfPre    : 0      | 
+Bank24 RowConfPre    : 0      | Bank25 RowConfPre    : 0      | Bank26 RowConfPre    : 0      | Bank27 RowConfPre    : 0      | 
+Bank28 RowConfPre    : 0      | Bank29 RowConfPre    : 0      | Bank30 RowConfPre    : 0      | Bank31 RowConfPre    : 0      | 
+Bank32 RowConfPre    : 0      | Bank33 RowConfPre    : 0      | Bank34 RowConfPre    : 0      | Bank35 RowConfPre    : 0      | 
+Bank36 RowConfPre    : 0      | Bank37 RowConfPre    : 0      | Bank38 RowConfPre    : 0      | Bank39 RowConfPre    : 0      | 
+Bank40 RowConfPre    : 0      | Bank41 RowConfPre    : 0      | Bank42 RowConfPre    : 0      | Bank43 RowConfPre    : 0      | 
+Bank44 RowConfPre    : 0      | Bank45 RowConfPre    : 0      | Bank46 RowConfPre    : 0      | Bank47 RowConfPre    : 0      | 
+-------------------- Page Timeout Count (Counter) -------------------------------------
+Bank0  PageTimeout   : 0      | Bank1  PageTimeout   : 0      | Bank2  PageTimeout   : 0      | Bank3  PageTimeout   : 0      | 
+Bank4  PageTimeout   : 0      | Bank5  PageTimeout   : 0      | Bank6  PageTimeout   : 0      | Bank7  PageTimeout   : 0      | 
+Bank8  PageTimeout   : 0      | Bank9  PageTimeout   : 0      | Bank10 PageTimeout   : 0      | Bank11 PageTimeout   : 0      | 
+Bank12 PageTimeout   : 0      | Bank13 PageTimeout   : 0      | Bank14 PageTimeout   : 0      | Bank15 PageTimeout   : 0      | 
+Bank16 PageTimeout   : 0      | Bank17 PageTimeout   : 0      | Bank18 PageTimeout   : 0      | Bank19 PageTimeout   : 0      | 
+Bank20 PageTimeout   : 0      | Bank21 PageTimeout   : 0      | Bank22 PageTimeout   : 0      | Bank23 PageTimeout   : 0      | 
+Bank24 PageTimeout   : 0      | Bank25 PageTimeout   : 0      | Bank26 PageTimeout   : 0      | Bank27 PageTimeout   : 0      | 
+Bank28 PageTimeout   : 0      | Bank29 PageTimeout   : 0      | Bank30 PageTimeout   : 0      | Bank31 PageTimeout   : 0      | 
+Bank32 PageTimeout   : 0      | Bank33 PageTimeout   : 0      | Bank34 PageTimeout   : 0      | Bank35 PageTimeout   : 0      | 
+Bank36 PageTimeout   : 0      | Bank37 PageTimeout   : 0      | Bank38 PageTimeout   : 0      | Bank39 PageTimeout   : 0      | 
+Bank40 PageTimeout   : 0      | Bank41 PageTimeout   : 0      | Bank42 PageTimeout   : 0      | Bank43 PageTimeout   : 0      | 
+Bank44 PageTimeout   : 0      | Bank45 PageTimeout   : 0      | Bank46 PageTimeout   : 0      | Bank47 PageTimeout   : 0      | 
+-------------------- Enhance Page Adapt Level Count (Counter) -------------------------
+Rank0 ENH_PAGE_ADAPT : Level0 : 0             | Level1 : 0             | Level2 : 0             | Level3 : 0             | 
+-------------------- Rhit Break Precharge Count (Counter) -----------------------------------
+Bank0  RhitBreakPre  : 0      | Bank1  RhitBreakPre  : 0      | Bank2  RhitBreakPre  : 0      | Bank3  RhitBreakPre  : 0      | 
+Bank4  RhitBreakPre  : 0      | Bank5  RhitBreakPre  : 0      | Bank6  RhitBreakPre  : 0      | Bank7  RhitBreakPre  : 0      | 
+Bank8  RhitBreakPre  : 0      | Bank9  RhitBreakPre  : 0      | Bank10 RhitBreakPre  : 0      | Bank11 RhitBreakPre  : 0      | 
+Bank12 RhitBreakPre  : 0      | Bank13 RhitBreakPre  : 0      | Bank14 RhitBreakPre  : 0      | Bank15 RhitBreakPre  : 0      | 
+Bank16 RhitBreakPre  : 0      | Bank17 RhitBreakPre  : 0      | Bank18 RhitBreakPre  : 0      | Bank19 RhitBreakPre  : 0      | 
+Bank20 RhitBreakPre  : 0      | Bank21 RhitBreakPre  : 0      | Bank22 RhitBreakPre  : 0      | Bank23 RhitBreakPre  : 0      | 
+Bank24 RhitBreakPre  : 0      | Bank25 RhitBreakPre  : 0      | Bank26 RhitBreakPre  : 0      | Bank27 RhitBreakPre  : 0      | 
+Bank28 RhitBreakPre  : 0      | Bank29 RhitBreakPre  : 0      | Bank30 RhitBreakPre  : 0      | Bank31 RhitBreakPre  : 0      | 
+Bank32 RhitBreakPre  : 0      | Bank33 RhitBreakPre  : 0      | Bank34 RhitBreakPre  : 0      | Bank35 RhitBreakPre  : 0      | 
+Bank36 RhitBreakPre  : 0      | Bank37 RhitBreakPre  : 0      | Bank38 RhitBreakPre  : 0      | Bank39 RhitBreakPre  : 0      | 
+Bank40 RhitBreakPre  : 0      | Bank41 RhitBreakPre  : 0      | Bank42 RhitBreakPre  : 0      | Bank43 RhitBreakPre  : 0      | 
+Bank44 RhitBreakPre  : 0      | Bank45 RhitBreakPre  : 0      | Bank46 RhitBreakPre  : 0      | Bank47 RhitBreakPre  : 0      | 
+Total  RhitBreakPre  : 0      | 
+-------------------- Dummy Tout Precharge Count (Counter) -----------------------------------
+Bank0  DummyToutPre  : 0      | Bank1  DummyToutPre  : 0      | Bank2  DummyToutPre  : 0      | Bank3  DummyToutPre  : 0      | 
+Bank4  DummyToutPre  : 0      | Bank5  DummyToutPre  : 0      | Bank6  DummyToutPre  : 0      | Bank7  DummyToutPre  : 0      | 
+Bank8  DummyToutPre  : 0      | Bank9  DummyToutPre  : 0      | Bank10 DummyToutPre  : 0      | Bank11 DummyToutPre  : 0      | 
+Bank12 DummyToutPre  : 0      | Bank13 DummyToutPre  : 0      | Bank14 DummyToutPre  : 0      | Bank15 DummyToutPre  : 0      | 
+Bank16 DummyToutPre  : 0      | Bank17 DummyToutPre  : 0      | Bank18 DummyToutPre  : 0      | Bank19 DummyToutPre  : 0      | 
+Bank20 DummyToutPre  : 0      | Bank21 DummyToutPre  : 0      | Bank22 DummyToutPre  : 0      | Bank23 DummyToutPre  : 0      | 
+Bank24 DummyToutPre  : 0      | Bank25 DummyToutPre  : 0      | Bank26 DummyToutPre  : 0      | Bank27 DummyToutPre  : 0      | 
+Bank28 DummyToutPre  : 0      | Bank29 DummyToutPre  : 0      | Bank30 DummyToutPre  : 0      | Bank31 DummyToutPre  : 0      | 
+Bank32 DummyToutPre  : 0      | Bank33 DummyToutPre  : 0      | Bank34 DummyToutPre  : 0      | Bank35 DummyToutPre  : 0      | 
+Bank36 DummyToutPre  : 0      | Bank37 DummyToutPre  : 0      | Bank38 DummyToutPre  : 0      | Bank39 DummyToutPre  : 0      | 
+Bank40 DummyToutPre  : 0      | Bank41 DummyToutPre  : 0      | Bank42 DummyToutPre  : 0      | Bank43 DummyToutPre  : 0      | 
+Bank44 DummyToutPre  : 0      | Bank45 DummyToutPre  : 0      | Bank46 DummyToutPre  : 0      | Bank47 DummyToutPre  : 0      | 
+Total  DummyToutPre  : 0      | 
+-------------------- Func Precharge Count (Counter) -----------------------------------
+Bank0  FuncPrecharge : 0      | Bank1  FuncPrecharge : 0      | Bank2  FuncPrecharge : 0      | Bank3  FuncPrecharge : 0      | 
+Bank4  FuncPrecharge : 0      | Bank5  FuncPrecharge : 0      | Bank6  FuncPrecharge : 0      | Bank7  FuncPrecharge : 0      | 
+Bank8  FuncPrecharge : 0      | Bank9  FuncPrecharge : 0      | Bank10 FuncPrecharge : 0      | Bank11 FuncPrecharge : 0      | 
+Bank12 FuncPrecharge : 0      | Bank13 FuncPrecharge : 0      | Bank14 FuncPrecharge : 0      | Bank15 FuncPrecharge : 0      | 
+Bank16 FuncPrecharge : 0      | Bank17 FuncPrecharge : 0      | Bank18 FuncPrecharge : 0      | Bank19 FuncPrecharge : 0      | 
+Bank20 FuncPrecharge : 0      | Bank21 FuncPrecharge : 0      | Bank22 FuncPrecharge : 0      | Bank23 FuncPrecharge : 0      | 
+Bank24 FuncPrecharge : 0      | Bank25 FuncPrecharge : 0      | Bank26 FuncPrecharge : 0      | Bank27 FuncPrecharge : 0      | 
+Bank28 FuncPrecharge : 0      | Bank29 FuncPrecharge : 0      | Bank30 FuncPrecharge : 0      | Bank31 FuncPrecharge : 0      | 
+Bank32 FuncPrecharge : 0      | Bank33 FuncPrecharge : 0      | Bank34 FuncPrecharge : 0      | Bank35 FuncPrecharge : 0      | 
+Bank36 FuncPrecharge : 0      | Bank37 FuncPrecharge : 0      | Bank38 FuncPrecharge : 0      | Bank39 FuncPrecharge : 0      | 
+Bank40 FuncPrecharge : 0      | Bank41 FuncPrecharge : 0      | Bank42 FuncPrecharge : 0      | Bank43 FuncPrecharge : 0      | 
+Bank44 FuncPrecharge : 0      | Bank45 FuncPrecharge : 0      | Bank46 FuncPrecharge : 0      | Bank47 FuncPrecharge : 0      | 
+Total  FuncPrecharge : 0      | 
+-------------------- Func ABR Count (Counter) -----------------------------------------
+Rank0  & Sc0 FuncAbr       : 0      | 
+-------------------- Func PBR Count (Counter) -----------------------------------------
+Bank0  FuncPbr       : 11     | Bank1  FuncPbr       : 12     | Bank2  FuncPbr       : 11     | Bank3  FuncPbr       : 11     | 
+Bank4  FuncPbr       : 11     | Bank5  FuncPbr       : 11     | Bank6  FuncPbr       : 11     | Bank7  FuncPbr       : 11     | 
+Bank8  FuncPbr       : 11     | Bank9  FuncPbr       : 11     | Bank10 FuncPbr       : 11     | Bank11 FuncPbr       : 11     | 
+Bank12 FuncPbr       : 11     | Bank13 FuncPbr       : 11     | Bank14 FuncPbr       : 11     | Bank15 FuncPbr       : 11     | 
+Bank16 FuncPbr       : 11     | Bank17 FuncPbr       : 11     | Bank18 FuncPbr       : 11     | Bank19 FuncPbr       : 11     | 
+Bank20 FuncPbr       : 11     | Bank21 FuncPbr       : 11     | Bank22 FuncPbr       : 11     | Bank23 FuncPbr       : 11     | 
+Bank24 FuncPbr       : 11     | Bank25 FuncPbr       : 11     | Bank26 FuncPbr       : 11     | Bank27 FuncPbr       : 11     | 
+Bank28 FuncPbr       : 11     | Bank29 FuncPbr       : 11     | Bank30 FuncPbr       : 11     | Bank31 FuncPbr       : 11     | 
+Bank32 FuncPbr       : 11     | Bank33 FuncPbr       : 11     | Bank34 FuncPbr       : 11     | Bank35 FuncPbr       : 11     | 
+Bank36 FuncPbr       : 11     | Bank37 FuncPbr       : 11     | Bank38 FuncPbr       : 11     | Bank39 FuncPbr       : 11     | 
+Bank40 FuncPbr       : 11     | Bank41 FuncPbr       : 11     | Bank42 FuncPbr       : 11     | Bank43 FuncPbr       : 11     | 
+Bank44 FuncPbr       : 11     | Bank45 FuncPbr       : 11     | Bank46 FuncPbr       : 11     | Bank47 FuncPbr       : 11     | 
+-------------------- Request Statistics (DDR Command Number) --------------------------
+Active cnt                           : 39803        | Total act cnt                        : 39803
+Disturb active cnt                   : 0            | Total disturb active cnt             : 0
+Bypass active cnt                    : 0            | Total byp act cnt                    : 0
+Bypass active cnt ratio              : 0.00         | Bypass active cnt ratio              : 0.00
+Precharge_sb cnt                     : 0            | Total precharge_sb cnt               : 0
+Precharge_pb cnt                     : 0            | Total precharge_pb cnt               : 0
+Disturb precharge_pb cnt             : 0            | Total disturb precharge_pb cnt       : 0
+Precharge_ab cnt                     : 0            | Total precharge_ab cnt               : 0
+Read cnt                             : 0            | Total read cnt                       : 0
+Write                                : 39798        | Total write                          : 39798
+Read with AP                         : 0            | Total read with AP                   : 0
+Write with AP                        : 39790        | Total write with AP                  : 39790
+Mask write                           : 0            | Total mask write                     : 0
+Mask write with AP                   : 0            | Total mask write with AP             : 0
+Row hit                              : 39785        | Total row hit                        : 39785
+Row miss cnt                         : 39803        | Total row miss cnt                   : 39803
+ecc read cnt                         : 0            | Total ecc read cnt                   : 0
+ecc write cnt                        : 0            | Total ecc write cnt                  : 0
+merge read cnt                       : 0            | Total merge read cnt                 : 0
+fast read cnt                        : 0            | Total fast read cnt                  : 0
+fast act cnt                         : 0            | Total fast act cnt                   : 0
+Row hit ratio                        : 0.50         | Total row hit ratio                  : 0.50
+Row miss ratio                       : 0.50         | Total row miss ratio                 : 0.50
+Timeout cnt                          : 0            | Total timeout cnt                    : 0
+Fast timeout cnt                     : 0            | Total fast timeout cnt               : 0
+Slow timeout cnt                     : 0            | Total slow timeout cnt               : 0
+Real Time Timeout cnt                : 0            | Total RT timeout cnt                 : 0
+Perf rd Timeout cnt                  : 0            | Total Perf rd timeout cnt            : 0
+Perf wr Timeout cnt                  : 0            | Total Perf wr timeout cnt            : 0
+Dummy Timeout cnt                    : 0            | Total dummy timeout cnt              : 0
+Dummy hqos cnt                       : 0            | Total dummy hqos cnt                 : 0
+-------------------- Confilct Statistics (DDR Command Number) -------------------------
+Address conflict                     : 0            | Total address conf cnt               : 0
+Perf Addr conflict                   : 0            | Total Perf addr conf cnt             : 0
+Id conflict                          : 0            | Total id conf cnt                    : 0
+Bank conflict                        : 0            | Total bank conf cnt                  : 0
+All conflict                         : 0            | Total all conf cnt                   : 0
+RW switch cnt                        : 1            | Total RW switch cnt                  : 1
+Rank switch cnt                      : 0            | Total rank switch cnt                : 0
+R rank switch cnt                    : 0            | Total rrank switch cnt               : 0
+W rank switch cnt                    : 0            | Total wrank switch cnt               : 0
+Sid switch cnt                       : 0            | Total sid switch cnt                 : 0
+Rw idle cnt                          : 0            | Total rw idle cnt                    : 0
+Average rank cnt                     : 0            | Average sid cnt                      : 0
+-------------------- Latency Statistics (ns less than) --------------------------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+LatTh  |10     |20     |30     |40     |50     |60     |70     |80     |90     |100    |110    |120    |130    |140    |150    |160    |170    |180    |190    |200    |210    |220    |230    |240    |250    |260    |270    |280    |290    |300    |400    |500    |600    |700    |800    |900    |1000   |1500   |2000   |10000  |
+LatNe  |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------- Latency Statistics (ns) ------------------------------------------
+max latency : 0.00, task=0, min latency : 0.00, task=0
+high qos max latency : 0.00, task=0
+total ddrc average latency rank0 : 0.00
+int ddrc average latency : 0
+total ddrc average latency : 0.00
+total ddrc average high qos latency rank0 : 0.00
+total ddrc average high qos latency : 0.00
+high qos trigger read group swiching cnt : 0
+total cmd2dfi average latency : 0.00
+int cmd2dfi average latency : 0.00
+total read timing met average cnt : 0.00
+inhere latency : 48.75
+Pd Block Read cnt : 0, Average cnt : nan
+Asref Block Read cnt : 0, Average cnt : nan
+Cmd Met Pd cnt : 0, Average cnt : 0.00
+Cmd Met Asref cnt : 0, Average cnt : 0.00
+PBR Block Read cnt : 0, Average cnt : nan
+ABR Block Read cnt : 0, Average cnt : nan
+PBR Block Cmd cycle : 0, PBR cycle : 0, ref_block_ratio : nan
+Same row mask read cnt : 0, ratio : 0.00%
+Same row mask write cnt : 598, ratio : 1.50%
+Precharge_pb cnt : 0, Page open time exceed cnt : 0, ratio : 0.00%
+Negative R2W Rank Switch cnt : 0
+Long Gap R cnt : 0
+Long Gap W cnt : 0
+Long Gap R2W cnt : 0
+Long Gap W2R cnt : 0
+-------------------- QOS Statistics (Total DMC Command Number/ns) ---------------------
+qos |Count   |Ratio |Tout cnt |Tout fcnt |Tout scnt |Av lat |0~50      |50~100    |100~150   |150~200   |200~300   |300~500   |500~1000  |1000~2000 |2000~max  |
+q0  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q1  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q2  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q3  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q4  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q5  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q6  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+q7  |0       |0.00  |0        |0         |0         |0.00   |0         |0         |0         |0         |0         |0         |0         |0         |0         |
+-------------------- MID Statistics (Command Number:Cmd2DQ Latency/ns) ----------------
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Mid    |0      |1      |2      |3      |4      |5      |6      |7      |8      |9      |10     |11     |12     |13     |14     |15     |16     |17     |18     |19     |20     |21     |22     |23     |24     |25     |26     |27     |28     |29     |30     |31     |32     |33     |34     |35     |36     |37     |38     |39     |40     |41     |42     |43     |44     |45     |46     |47     |48     |49     |50     |51     |52     |53     |54     |55     |56     |57     |58     |59     |60     |61     |62     |63     |64     |65     |66     |67     |68     |69     |70     |71     |72     |73     |74     |75     |76     |77     |78     |79     |80     |81     |82     |83     |84     |85     |86     |87     |88     |89     |90     |91     |92     |93     |94     |95     |96     |97     |98     |99     |100    |101    |102    |103    |104    |105    |106    |107    |108    |109    |110    |111    |112    |113    |114    |115    |116    |117    |118    |119    |120    |121    |122    |123    |124    |125    |126    |127    |128    |129    |130    |131    |132    |133    |134    |135    |136    |137    |138    |139    |140    |141    |142    |143    |144    |145    |146    |147    |148    |149    |150    |151    |152    |153    |154    |155    |156    |157    |158    |159    |160    |161    |162    |163    |164    |165    |166    |167    |168    |169    |170    |171    |172    |173    |174    |175    |176    |177    |178    |179    |180    |181    |182    |183    |184    |185    |186    |187    |188    |189    |190    |191    |192    |193    |194    |195    |196    |197    |198    |199    |200    |201    |202    |203    |204    |205    |206    |207    |208    |209    |210    |211    |212    |213    |214    |215    |216    |217    |218    |219    |220    |221    |222    |223    |224    |225    |226    |227    |228    |229    |230    |231    |232    |233    |234    |235    |236    |237    |238    |239    |240    |241    |242    |243    |244    |245    |246    |247    |248    |249    |250    |251    |252    |253    |254    |255    |
+MidCnt |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |0      |
+MidLat |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |0.00   |
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------- OCC Statistics (Counter Number) ----------------------------------
+occ 0 cnt : 1          | occ 1 cnt : 0          | occ 2 cnt : 12         | occ 3 cnt : 79        
+-------------------- PERF Statistics (Counter Number) ---------------------------------
+Gbuf read       : 0          | Total Gbuf read : 0          | Gbuf write      : 39872      | Total Gbuf write : 39872      | 
+Merge           : 0          | Forward         : 0          | AddrPush        : 0          | 
+Gbuf lvl0       : 0          | Total Gbuf lvl0 : 0          | 
+Gbuf lvl1       : 0          | Total Gbuf lvl1 : 0          | 
+Gbuf lvl2       : 0          | Total Gbuf lvl2 : 0          | 
+Gbuf lvl3       : 0          | Total Gbuf lvl3 : 0          | 
+Gbuf lvl4       : 0          | Total Gbuf lvl4 : 0          | 
+Gbuf lvl5       : 0          | Total Gbuf lvl5 : 0          | 
+-------------------- PERF Queue Statistics (Percentage/Cycle) --------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Qnum   |0      |1      |2      |3      |4      |5      |6      |7      |8      |9      |10     |11     |12     |13     |14     |15     |16     |17     |18     |19     |20     |21     |22     |23     |24     |25     |26     |27     |28     |29     |30     |31     |32     |33     |34     |35     |36     |37     |38     |39     |40     |41     |42     |43     |44     |45     |46     |47     |48     |49     |50     |51     |52     |53     |54     |55     |56     |57     |58     |59     |60     |61     |62     |63     |64     |65     |66     |67     |68     |69     |70     |71     |72     |73     |74     |75     |76     |77     |78     |79     |80     |
+Per    |0.000  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.014  |0.005  |0.002  |0.002  |0.002  |0.002  |0.009  |0.034  |0.036  |0.024  |0.009  |0.009  |0.019  |0.028  |0.042  |0.016  |0.013  |0.016  |0.030  |0.027  |0.014  |0.023  |0.025  |0.027  |0.019  |0.027  |0.028  |0.025  |0.011  |0.020  |0.028  |0.025  |0.027  |0.012  |0.015  |0.027  |0.042  |0.020  |0.015  |0.014  |0.027  |0.047  |0.019  |0.011  |0.015  |0.018  |0.051  |0.019  |0.018  |0.008  |0.047  |0.030  |0.019  |0.015  |0.017  |0.051  |0.020  |0.269  |5.768  |49.384 |43.323 |
+Cycle  |0      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |13     |5      |2      |2      |2      |2      |8      |32     |34     |22     |8      |8      |18     |26     |39     |15     |12     |15     |28     |25     |13     |21     |23     |25     |18     |25     |26     |23     |10     |19     |26     |23     |25     |11     |14     |25     |39     |19     |14     |13     |25     |44     |18     |10     |14     |17     |48     |18     |17     |7      |44     |28     |18     |14     |16     |48     |19     |251    |5381   |46070  |40416  |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------- DMC Pressure Statistics (Percentage/Cycle) -----------------------
+Cmd valid       : 63810      | Ratio           : inf        | Total cmd valid : 63810      | Ratio           : 68.400     | 
+DMC access      : 39872      | Command bp      : 23938      | Bp ratio        : 37.514     | 
+Total access    : 39872      | Total bp        : 23938      | Total bp ratio  : 37.514     | 
+-------------------- DMC Queue Statistics (Percentage/Cycle) --------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Qnum   |0      |1      |2      |3      |4      |5      |6      |7      |8      |9      |10     |11     |12     |13     |14     |15     |16     |17     |18     |19     |20     |
+Per    |0.006  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.002  |0.019  |0.411  |3.186  |13.112 |27.233 |23.517 |10.546 |6.308  |9.181  |6.459  |
+Cycle  |6      |2      |2      |2      |2      |2      |2      |2      |2      |2      |2      |18     |383    |2972   |12232  |25405  |21939  |9838   |5885   |8565   |6026   |
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-------------------- DMC USAGE Statistics (Percentage/Cycle) --------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Bank slot Max Usage : 0          | Bank slot Average Usage : 0.000      | Bank slot Backpress Level : 6         
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+========================================= END =========================================
+
