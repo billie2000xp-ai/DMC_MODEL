@@ -7,6 +7,13 @@
 #include <time.h>
 #include <bitset>
 #include <random>
+#include <vector>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
+#include <cassert>
 
 using namespace DRAMSim;
 
@@ -27,12 +34,11 @@ uint64_t total_bytes = 0;
 uint64_t trace_send_cnt = 0;
 uint32_t pre_channel = 0;
 
-struct PendingWrite {
-    uint64_t task;
-    unsigned ch;
-    // 可根据需要添加其他信息，如 delay 等
-};
-std::map<uint64_t, PendingWrite> pending_writes;  // 记录每个 task 暂存的第一个元素
+std::vector<unsigned> nd2nz_inflight;
+std::vector<unsigned> nd2nz_sent;
+std::vector<unsigned> nd2nz_done;
+uint64_t nd2nz_resp_cnt = 0;
+uint64_t nd2nz_prev_resp_cnt = 0;
 
 ifstream file;
 
@@ -49,7 +55,6 @@ float calc_effi() {
 /* callback functors */
 bool some_object::read_data(unsigned channel, uint64_t task, double readDataEnterDmcTime,
         double reqAddToDmcTime, double reqEnterDmcBufTime) {
-    total_bytes += DMC_DATA_BUS_BITS / 8;
     total_bytes += DMC_DATA_BUS_BITS / 8;
     if (LATENCY_MODE) {
         float latency = 0;
@@ -79,8 +84,15 @@ bool some_object::read_data(unsigned channel, uint64_t task, double readDataEnte
             }
         }
     }
+    if (ND2NZ_MODE && task < 0xF000000000000000) {
+        unsigned sid_idx = unsigned(task >> 48);
+        if (sid_idx < nd2nz_inflight.size() && nd2nz_inflight[sid_idx] > 0) {
+            nd2nz_inflight[sid_idx] --;
+            nd2nz_done[sid_idx] ++;
+            nd2nz_resp_cnt ++;
+        }
+    }
     if (task < 0xF000000000000000) {
-        OutstandingQueue[task] --;
         OutstandingQueue[task] --;
         if (OutstandingQueue[task] == 0) {
             OutstandingQueue.erase(task);
@@ -308,7 +320,7 @@ void rand_command(MemorySystemTop *ddrc, bool is_test_cmd) {
             // uint64_t addr_rand = ((uint64_t(rand()) | uint64_t(rand()) << 31) & (0xFFFFFFFFFFFFFFFF << align))
             //         % uint64_t(uint64_t(DRAM_CAPACITY) * 1024 * 1024 * 1024 / 8);
             // --- 修改开始：使用高品质 64位 随机数生成器 ---
-            static std::mt19937_64 gen(202603); // 定义 64位 随机数引擎，1337 是固定的种子保证每次跑 trace 结果可复现
+            static std::mt19937_64 gen(20260326); // 定义 64位 随机数引擎，1337 是固定的种子保证每次跑 trace 结果可复现
             uint64_t max_capacity = uint64_t(6) * 1024 * 1024 * 1024 / 8;
 
             std::uniform_int_distribution<uint64_t> dist(0, max_capacity - 1);
@@ -387,6 +399,36 @@ void rand_command(MemorySystemTop *ddrc, bool is_test_cmd) {
                 w_address = transaction.address;
             }
         }
+    }
+}
+
+void nd2nz_generate_command() {
+    if (ND2NZ_STREAMS == 0) return;
+    if (ND2NZ_CHAIN_DEPTH == 0) return;
+    if (task_cnt >= ND2NZ_TOTAL) return;
+    if (CommandQueue.empty()) CommandQueue.resize(1);
+
+    for (unsigned i = 0; i < ND2NZ_STREAMS && task_cnt < ND2NZ_TOTAL; i ++) {
+        unsigned sid_idx = unsigned((task_cnt + i) % ND2NZ_STREAMS);
+        if (nd2nz_sent[sid_idx] >= ((ND2NZ_TOTAL + ND2NZ_STREAMS - 1) / ND2NZ_STREAMS)) continue;
+        if (nd2nz_inflight[sid_idx] >= ND2NZ_CHAIN_DEPTH) continue;
+        if (OutstandingQueue.size() >= BKD_OSTD) return;
+
+        hha_command transaction;
+        transaction.type = DATA_READ;
+        transaction.task = (uint64_t(sid_idx) << 48) | nd2nz_sent[sid_idx];
+        transaction.address = ND2NZ_BASE_ADDR + uint64_t(sid_idx) * 0x10000000ULL + uint64_t(nd2nz_sent[sid_idx]) * ND2NZ_STRIDE;
+        transaction.burst_length = DATA_SIZE / 32 - 1;
+        transaction.channel = (VLD_CH_NUM > 0) ? (transaction.address >> CHINTLV_START) % VLD_CH_NUM : 0;
+        transaction.qos = 0;
+        transaction.mid = 0;
+        transaction.mpam_id = 0;
+        transaction.reqEnterDmcBufTime = double(cnt + T_DLY);
+        CommandQueue[0].push_back(transaction);
+        OutstandingQueue[transaction.task] = transaction.burst_length + 1;
+        nd2nz_inflight[sid_idx] ++;
+        nd2nz_sent[sid_idx] ++;
+        task_cnt ++;
     }
 }
 
@@ -474,28 +516,11 @@ void send_wdata(MemorySystemTop *ddrc) {
         uint64_t task = write_task[0].task;
         unsigned ch = write_task[0].ch;
         if (cnt >= write_task[0].delay) {
-            auto it = pending_writes.find(task);
-            if (it == pending_writes.end()) {
-                // 第一次触发：暂存当前元素，并从队列中移除
-                pending_writes[task] = {task, ch};  // 保存必要信息
+            bool ret = ddrc->addData(NULL, ch, task);
+            if (ret) {
                 write_task.erase(write_task.begin());
-                data_cnt--;
-                // PRINTN(setw(10) << now() << " -- first wdata pending, task=" << task << endl);
-            } else {
-                // 第二次触发：合并发送，使用第二次的通道参数（可根据需要调整）
-                bool ret = ddrc->addData(NULL, ch, task);
-                if (ret) {
-                    // 移除当前元素
-                    write_task.erase(write_task.begin());
-                    data_cnt--;
-                    total_bytes += DMC_DATA_BUS_BITS / 8;  // 假设每次发送对应一次突发，字节数累加
-                    total_bytes += DMC_DATA_BUS_BITS / 8;
-                    pending_writes.erase(task);            // 清除暂存
-                    // PRINTN(setw(10) << now() << " -- second wdata send, task=" << task << endl);
-                } else {
-                    // 发送失败，保留当前元素和暂存，下次重试                   
-                    // PRINTN(setw(10) << now() << " -- wdata backpressure, task=" << task << endl);                   
-                }
+                data_cnt --;
+                total_bytes += DMC_DATA_BUS_BITS / 8;
             }
         }
     }
@@ -569,6 +594,13 @@ int main(int argc, char *argv[]) {
     mem->RegisterCallbacks(rdata_cb, write_cb, read_cb, cmd_cb);
     parameter_check();
     CommandQueue.resize(1);
+    if (ND2NZ_MODE) {
+        nd2nz_inflight.assign(ND2NZ_STREAMS, 0);
+        nd2nz_sent.assign(ND2NZ_STREAMS, 0);
+        nd2nz_done.assign(ND2NZ_STREAMS, 0);
+        DEBUG("ND2NZ ordered mode enabled, streams="<<ND2NZ_STREAMS<<", chain_depth="<<ND2NZ_CHAIN_DEPTH
+                <<", total="<<ND2NZ_TOTAL<<", stride="<<ND2NZ_STRIDE);
+    }
 
     if (TRACE_EN || DOU_TRACE_EN) {
         DEBUG("Read from trace file...");
@@ -642,9 +674,26 @@ int main(int argc, char *argv[]) {
                 exit(0);
             }
         } else {
-            if (LATENCY_MODE) rand_command(mem, true);
-            if (PRINT_IDLE_LAT && cnt >= 1000) exit(0);
-            if (!PRINT_IDLE_LAT || (cnt % 1000 == 0)) rand_command(mem, false); 
+            if (ND2NZ_MODE) {
+                nd2nz_generate_command();
+                if (nd2nz_resp_cnt >= ND2NZ_TOTAL && task_cnt >= ND2NZ_TOTAL && OutstandingQueue.empty()) {
+                    float efficiency = calc_effi();
+                    DEBUG("Done, time: "<<cnt<<", total command cnt: "<<task_cnt<<", response cnt: "<<nd2nz_resp_cnt
+                            <<", efficiency: "<<fixed<<setprecision(2)<<efficiency<<"%");
+                    DEBUG("Power Consumption: "<<fixed<<mem->getMPTC()->getPTC(0)->calc_power());
+                    delete mem;
+                    print_pass();
+                    exit(0);
+                }
+                if (STATE_TIME != 0 && cnt % STATE_TIME == 0 && nd2nz_resp_cnt != nd2nz_prev_resp_cnt) {
+                    DEBUG("ND2NZ progress, time="<<cnt<<", sent="<<task_cnt<<", resp="<<nd2nz_resp_cnt);
+                    nd2nz_prev_resp_cnt = nd2nz_resp_cnt;
+                }
+            } else {
+                if (LATENCY_MODE) rand_command(mem, true);
+                if (PRINT_IDLE_LAT && cnt >= 1000) exit(0);
+                if (!PRINT_IDLE_LAT || (cnt % 1000 == 0)) rand_command(mem, false);
+            }
              
         }
         send_command(mem);
