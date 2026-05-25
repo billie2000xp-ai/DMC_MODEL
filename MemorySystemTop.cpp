@@ -24,11 +24,13 @@ namespace DRAMSim {
 #ifdef SYSARCH_PLATFORM
 MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogPath,
         HALib::Configurable* cfg) : 
-        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0) {
+        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0), upstreamReadData(NULL),
+        readDataAdapter(this, &MemorySystemTop::returnReadData32) {
 #else
 MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogPath,
         int argc, char *argv[]) : 
-        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0) {
+        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0), upstreamReadData(NULL),
+        readDataAdapter(this, &MemorySystemTop::returnReadData32) {
 #endif
 
 #ifdef SYSARCH_PLATFORM
@@ -181,6 +183,13 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     PTC_EMPTY_WR_TH = cfg->getNumber("PTC_EMPTY_WR_TH");
     PTC_R2W_SWITCH_TH = cfg->getNumber("PTC_R2W_SWITCH_TH");
     PTC_W2R_SWITCH_TH = cfg->getNumber("PTC_W2R_SWITCH_TH");
+    EARLY_W2R_PF_READ_TH = cfg->getNumber("EARLY_W2R_PF_READ_TH");
+    EARLY_W2R_TOTAL_GAP_TH = cfg->getNumber("EARLY_W2R_TOTAL_GAP_TH");
+    EARLY_W2R_PTC_GAP_TH = cfg->getNumber("EARLY_W2R_PTC_GAP_TH");
+    EARLY_W2R_MIN_WR_TH = cfg->getNumber("EARLY_W2R_MIN_WR_TH");
+    EARLY_W2R_TOTAL_RD_GAP_TH = cfg->getNumber("EARLY_W2R_TOTAL_RD_GAP_TH");
+    EARLY_W2R_PF_RD_GAP_TH = cfg->getNumber("EARLY_W2R_PF_RD_GAP_TH");
+    EARLY_W2R_PTC_RD_GAP_TH = cfg->getNumber("EARLY_W2R_PTC_RD_GAP_TH");
     OPENPAGE_TIME_RD = cfg->getNumber("OPENPAGE_TIME_RD");
     OPENPAGE_TIME_WR = cfg->getNumber("OPENPAGE_TIME_WR");
     ENH_PAGE_ADPT_EN = cfg->getBool("ENH_PAGE_ADPT_EN");
@@ -354,6 +363,12 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     TABLE_DEPTH = cfg->getNumber("TABLE_DEPTH");
     SID_LOOSE = cfg->getBool("SID_LOOSE");
     SIMPLE_GRP_SID_EN = cfg->getBool("SIMPLE_GRP_SID_EN");
+    PREFER_SAME_SID_READ = cfg->getBool("PREFER_SAME_SID_READ");
+    MAX_SAME_SID_READ = cfg->getNumber("MAX_SAME_SID_READ");
+    LIMIT_SAME_SID_READ = cfg->getBool("LIMIT_SAME_SID_READ");
+    MAX_CONTINUOUS_SAME_SID_READ = cfg->getNumber("MAX_CONTINUOUS_SAME_SID_READ");
+    TAIL_AWARE_SID_ROTATE = cfg->getBool("TAIL_AWARE_SID_ROTATE");
+    TAIL_AWARE_MAX_AGE_DIFF = cfg->getNumber("TAIL_AWARE_MAX_AGE_DIFF");
     TIMEOUT_SID = cfg->getNumber("TIMEOUT_SID");
     TIMEOUT_SID_ENABLE = cfg->getBool("TIMEOUT_SID_ENABLE");
     SERIAL_PRE_SIDGRP = cfg->getNumber("SERIAL_PRE_SIDGRP");
@@ -753,6 +768,12 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     GET_PARAM(TABLE_DEPTH, "TABLE_DEPTH", getUint);
     GET_PARAM(SID_LOOSE, "SID_LOOSE", getBool);
     GET_PARAM(SIMPLE_GRP_SID_EN, "SIMPLE_GRP_SID_EN", getBool);
+    GET_PARAM(PREFER_SAME_SID_READ, "PREFER_SAME_SID_READ", getBool);
+    GET_PARAM(MAX_SAME_SID_READ, "MAX_SAME_SID_READ", getUint);
+    GET_PARAM(LIMIT_SAME_SID_READ, "LIMIT_SAME_SID_READ", getBool);
+    GET_PARAM(MAX_CONTINUOUS_SAME_SID_READ, "MAX_CONTINUOUS_SAME_SID_READ", getUint);
+    GET_PARAM(TAIL_AWARE_SID_ROTATE, "TAIL_AWARE_SID_ROTATE", getBool);
+    GET_PARAM(TAIL_AWARE_MAX_AGE_DIFF, "TAIL_AWARE_MAX_AGE_DIFF", getUint);
     GET_PARAM(TIMEOUT_SID, "TIMEOUT_SID", getUint);
     GET_PARAM(TIMEOUT_SID_ENABLE, "TIMEOUT_SID_ENABLE", getBool);
     GET_PARAM(ENGRP_LR_LEVEL, "ENGRP_LR_LEVEL", getUint);
@@ -860,7 +881,9 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     GET_PARAM(tRFCpb, "tRFCpb", getUint);
     GET_PARAM(tPBR2PBR, "tPBR2PBR", getUint);
     GET_PARAM(tPBR2PBR_L, "tPBR2PBR_L", getUint);
+    GET_PARAM(PBR_STATE_CYCLE, "PBR_STATE_CYCLE", getUint);
     GET_PARAM(tPBR2ACT, "tPBR2ACT", getUint);
+    GET_PARAM(tPBR2ACT_S, "tPBR2ACT_S", getUint);
     GET_PARAM(tCMD_WAKEUP, "tCMD_WAKEUP", getUint);
     GET_PARAM(tXP_V570, "tXP_V570", getUint);
     GET_PARAM(tXP_V580, "tXP_V580", getUint);
@@ -1676,7 +1699,10 @@ uint32_t MemorySystemTop::getDmcPressureLevel() {
 
 bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id) {
     if (EM_ENABLE && EM_MODE == 0) channel = 0;
-    if (WRITE_BUFFER_ENABLE && ((mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->perf_pre_data_time == mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->now())
+    bool first_upstream_beat = ((upstream_wdata_cnt[id] & 1) == 0);
+
+    if (WRITE_BUFFER_ENABLE && first_upstream_beat &&
+            ((mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->perf_pre_data_time == mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->now())
             || (mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->m_pre_data_time == mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->now()))) {
         if (DEBUG_BUS) {
             PRINTN_M(channel, setw(10)<<now()<<" -- WDATA :: BP Wdata, Two Cycle One Data :: task="<<id
@@ -1688,8 +1714,14 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id) {
 
     if (DROP_WRITE_CMD || PERFECT_DMC_EN) return true;
 
+    upstream_wdata_cnt[id]++;
+    if ((upstream_wdata_cnt[id] & 1) != 0) {
+        return true;
+    }
+
     auto it = write_map.find(id);
     if (it == write_map.end()) {
+        upstream_wdata_cnt[id]--;
         if (DEBUG_BUS) {
             PRINTN_M(channel, setw(10)<<now()<<" -- WDATA :: BP Wdata, Wcmd must be send first, task="<<id<<endl);
         }
@@ -1712,11 +1744,20 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id) {
     }
     if (it->second.num_256bit == 0) {
         write_map.erase(id);
+        upstream_wdata_cnt.erase(id);
     }
     return true;
 }
 
 void MemorySystemTop::update() {
+    if (!upstream_rdata_queue.empty() && upstreamReadData != NULL) {
+        upstream_rdata_msg msg = upstream_rdata_queue.front();
+        if ((*upstreamReadData)(msg.channel, msg.task, msg.readDataEnterDmcTime,
+                msg.reqAddToDmcTime, msg.reqEnterDmcBufTime)) {
+            upstream_rdata_queue.pop_front();
+        }
+    }
+
     if (NUM_CHANS % NUM_PFQS != 0) {
         ERROR("NUM_CHANS / NUM_PFQS must be an integer.");
         ERROR("Current NUM_CHANS = " << NUM_CHANS);
@@ -1798,9 +1839,24 @@ void MemorySystemTop::RegisterCallbacks(
     TransactionCompleteCB *writeDone,
     TransactionCompleteCB *readDone,
     TransactionCompleteCB *cmdDone ) {
+    upstreamReadData = readData;
     for (size_t i = 0; i < NUM_CHANS; i++) {
-        mpfq_->RegisterCallbacks(readData, writeDone, readDone, cmdDone);
+        mpfq_->RegisterCallbacks(&readDataAdapter, writeDone, readDone, cmdDone);
     }
+}
+
+bool MemorySystemTop::returnReadData32(unsigned channel, uint64_t task, double readDataEnterDmcTime,
+        double reqAddToDmcTime, double reqEnterDmcBufTime) {
+    if (upstreamReadData == NULL) return false;
+    if (!upstream_rdata_queue.empty() && upstream_rdata_queue.front().channel == channel) return false;
+    upstream_rdata_msg msg;
+    msg.channel = channel;
+    msg.task = task;
+    msg.readDataEnterDmcTime = readDataEnterDmcTime;
+    msg.reqAddToDmcTime = reqAddToDmcTime;
+    msg.reqEnterDmcBufTime = reqEnterDmcBufTime;
+    upstream_rdata_queue.push_back(msg);
+    return (*upstreamReadData)(channel, task, readDataEnterDmcTime, reqAddToDmcTime, reqEnterDmcBufTime);
 }
 
 void MemorySystemTop::dfs_backpress(unsigned ch, bool backpress) {
@@ -2607,32 +2663,6 @@ void MemorySystemTop::statistics(uint32_t ch) {
         }
         STATE_PRINTN(ch, endl);
     }
-    
-    double sum = 0.0;
-    double sumsq = 0.0;
-    uint64_t min_cnt = uint64_t(-1);
-    uint64_t max_cnt = 0;
-    unsigned n = 0;
-    for (size_t bank = 0; bank < NUM_BANKS; bank ++) {
-        for (size_t rank = 0; rank < NUM_RANKS; rank ++) {
-            unsigned b = rank * NUM_BANKS + bank;
-            uint64_t cnt = (mptc_->getPTC(ch)->ptc_r_bank_cnt[b] - pre_ptc_r_bank_cnt[ch][b]) +
-                    (mptc_->getPTC(ch)->ptc_w_bank_cnt[b] - pre_ptc_w_bank_cnt[ch][b]);
-            sum += double(cnt);
-            sumsq += double(cnt) * double(cnt);
-            if (cnt < min_cnt) min_cnt = cnt;
-            if (cnt > max_cnt) max_cnt = cnt;
-            n++;
-        }
-    }
-    double mean = (n == 0) ? 0.0 : (sum / double(n));
-    double var = (n == 0) ? 0.0 : (sumsq / double(n) - mean * mean);
-    if (var < 0.0) var = 0.0;
-    double stddev = sqrt(var);
-    STATE_PRINTN(ch, "Ptc schedule bank cmd stddev : "<<fixed<<setprecision(2)<<setw(6)<<stddev);
-    STATE_PRINTN(ch, " | mean : "<<fixed<<setprecision(2)<<setw(6)<<mean);
-    STATE_PRINTN(ch, " | min/max : "<<min_cnt<<"/"<<max_cnt<<endl);
-    
     if (NUM_GROUPS > 0) {
         for (size_t group = 0; group < NUM_GROUPS; group ++) {
             for (size_t rank = 0; rank < NUM_RANKS; rank ++) {
@@ -2873,6 +2903,17 @@ void MemorySystemTop::statistics(uint32_t ch) {
         STATE_PRINTN(ch, "int ddrc average latency : 0"<<endl);
     }
     STATE_PRINTN(ch, "total ddrc average latency : "<<mptc_->getPTC(ch)->ddrc_av_lat * tDFI<<endl);
+    if (mptc_->getPTC(ch)->com_read_cnt > 0) {
+        long double avg_delay = static_cast<long double>(mptc_->getPTC(ch)->total_latency) / mptc_->getPTC(ch)->com_read_cnt;
+        long double avg_square = mptc_->getPTC(ch)->total_latency_square / mptc_->getPTC(ch)->com_read_cnt;
+        long double variance = avg_square - avg_delay * avg_delay;
+        if (variance < 0) variance = 0;
+        STATE_PRINTN(ch, "total ddrc latency variance : "<<static_cast<double>(variance * tDFI * tDFI)<<endl);
+        STATE_PRINTN(ch, "total ddrc latency stddev : "<<sqrt(static_cast<double>(variance)) * tDFI<<endl);
+    } else {
+        STATE_PRINTN(ch, "total ddrc latency variance : 0"<<endl);
+        STATE_PRINTN(ch, "total ddrc latency stddev : 0"<<endl);
+    }
     for (size_t rank = 0; rank < NUM_RANKS; rank ++) {
         STATE_PRINTN(ch, "total ddrc average high qos latency rank"<<rank<<" : "
                 <<mptc_->getPTC(ch)->rank_ddrc_av_highqos_lat[rank] * tDFI<<endl);
