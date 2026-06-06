@@ -186,6 +186,9 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     EARLY_W2R_PF_READ_TH = cfg->getNumber("EARLY_W2R_PF_READ_TH");
     EARLY_W2R_TOTAL_GAP_TH = cfg->getNumber("EARLY_W2R_TOTAL_GAP_TH");
     EARLY_W2R_PTC_GAP_TH = cfg->getNumber("EARLY_W2R_PTC_GAP_TH");
+    EARLY_W2R_PF_TH = cfg->getNumber("EARLY_W2R_PF_TH");
+    EARLY_W2R_GAP_TH = cfg->getNumber("EARLY_W2R_GAP_TH");
+    EARLY_W2R_PTC_TH = cfg->getNumber("EARLY_W2R_PTC_TH");
     EARLY_W2R_MIN_WR_TH = cfg->getNumber("EARLY_W2R_MIN_WR_TH");
     EARLY_W2R_TOTAL_RD_GAP_TH = cfg->getNumber("EARLY_W2R_TOTAL_RD_GAP_TH");
     EARLY_W2R_PF_RD_GAP_TH = cfg->getNumber("EARLY_W2R_PF_RD_GAP_TH");
@@ -595,6 +598,9 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     GET_PARAM(PTC_EMPTY_WR_TH, "PTC_EMPTY_WR_TH", getUint);
     GET_PARAM(PTC_R2W_SWITCH_TH, "PTC_R2W_SWITCH_TH", getUint);
     GET_PARAM(PTC_W2R_SWITCH_TH, "PTC_W2R_SWITCH_TH", getUint);
+    GET_PARAM(EARLY_W2R_PF_TH, "EARLY_W2R_PF_TH", getUint);
+    GET_PARAM(EARLY_W2R_GAP_TH, "EARLY_W2R_GAP_TH", getUint);
+    GET_PARAM(EARLY_W2R_PTC_TH, "EARLY_W2R_PTC_TH", getUint);
     GET_PARAM(OPENPAGE_TIME_RD, "OPENPAGE_TIME_RD", getUint);
     GET_PARAM(OPENPAGE_TIME_WR, "OPENPAGE_TIME_WR", getUint);
     GET_PARAM(ENH_PAGE_ADPT_EN, "ENH_PAGE_ADPT_EN", getBool);
