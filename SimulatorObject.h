@@ -1,3 +1,10 @@
+/*
+* Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+* Description: SimulatorObject.h
+* Author: l00434636
+* Create: 2020-10-27
+*/
+
 #ifndef _SIMULATOROBJ_H
 #define _SIMULATOROBJ_H
 
