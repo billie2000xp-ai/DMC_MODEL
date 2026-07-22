@@ -1,3 +1,10 @@
+/*
+ * Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+ * Description: Inline_ECC.h
+ * Author: l00434636
+ * Create: 2020-10-27
+ */
+
 #ifndef _INLINE_ECC_H_
 #define _INLINE_ECC_H_
 
@@ -10,11 +17,7 @@
 using namespace std;
 namespace DRAMSim {
 
-enum BUF_STATE {
-    BUF_IDLE,
-    WAIT_RDECC_BACK,
-    WAIT_WRECC_BACK
-};
+enum BUF_STATE { BUF_IDLE, WAIT_RDECC_BACK, WAIT_WRECC_BACK };
 
 enum ECC_MODEL_STATE {
     TRY_HIT_ECC_BUF,
@@ -27,52 +30,57 @@ enum ECC_MODEL_STATE {
     ECC_RD_MISS_DIRTY
 };
 
-enum ECC_STRATEGY {
-    ID_ORDER,
-    LRU
-};
+enum ECC_STRATEGY { ID_ORDER, LRU };
 
 struct ECC_BUF_Entry {
-    uint32_t buf_id = 0; // should not be changed
-    uint32_t ecc_buf_addr = 0; // there are 64 entry for ecc_buf;
-    bool     vld;
+    uint32_t buf_id = 0;        // should not be changed
+    uint32_t ecc_buf_addr = 0;  // there are 64 entry for ecc_buf;
+    bool vld;
     uint32_t slt_cnt;
-    uint64_t pdu_addr; // echo pdu cover 512Byte addr space
-    bool     eor; // end of row flag
+    uint64_t pdu_addr;  // echo pdu cover 512Byte addr space
+    bool eor;           // end of row flag
     uint32_t wr_ecc_pos;
-    bool     rd_ecc_pos;
+    bool rd_ecc_pos;
     uint64_t wr_ecc_info[16];
     uint64_t rd_ecc_info[16];
 
-    uint32_t ecc_pri;//replace priority
-    uint32_t wr_merge_cnt;//24/9/6
-    
+    uint32_t ecc_pri;       // replace priority
+    uint32_t wr_merge_cnt;  // 24/9/6
 
     BUF_STATE buf_ctrl_state;
     bool ecc_dirty = false;
-    bool rd_ecc    = false;
-    bool wr_ecc    = false;
-    std::vector<uint64_t>task_list;
+    bool rd_ecc = false;
+    bool wr_ecc = false;
+    std::vector<uint64_t> task_list;
 };
 
 class PFQ;
 class PTC;
 class MemorySystemTop;
 
-class Inline_ECC:public SimulatorObject {
+class Inline_ECC : public SimulatorObject {
 private:
     unsigned id_;
-    PFQ* pfq_;
-    MemorySystemTop* memorySystemTop_;
+    PFQ *pfq_;
+    MemorySystemTop *memorySystemTop_;
 
-public :
-    Inline_ECC(unsigned index, MemorySystemTop* top, unsigned id, ofstream &DDRSim_log_);
+public:
+    Inline_ECC(unsigned index, MemorySystemTop *top, unsigned id, ofstream &DDRSim_log_);
     virtual ~Inline_ECC();
 
-    void setPFQ(PFQ* pfq);
-    unsigned getId() const {return id_;}
-    MemorySystemTop* getMemorySystemTop() const {return memorySystemTop_;}
-    PFQ* getPFQ() const {return pfq_;}
+    void setPFQ(PFQ *pfq);
+    unsigned getId() const
+    {
+        return id_;
+    }
+    MemorySystemTop *getMemorySystemTop() const
+    {
+        return memorySystemTop_;
+    }
+    PFQ *getPFQ() const
+    {
+        return pfq_;
+    }
     unsigned channel;
     uint64_t channel_ohot;
     ofstream &DDRSim_log;
@@ -83,14 +91,14 @@ public :
     uint32_t get_avail_rd_ecc_buf_id();
     uint32_t get_avail_wr_ecc_buf_id();
 
-    bool proc_iecc(Transaction * trans, uint64_t inject_time);
-    bool addTransaction(Transaction * trans);
+    bool proc_iecc(Transaction *trans, uint64_t inject_time);
+    bool addTransaction(Transaction *trans);
     void update_rd_ecc_buf(uint32_t);
     void update_wr_ecc_buf(uint32_t);
-    bool ecc_try_add_rd_trans(Transaction * trans, uint32_t ecc_buf_id);
-    bool ecc_try_add_wr_trans(Transaction * trans, uint32_t ecc_buf_id);
-    bool try_add_ecc_rd(Transaction * trans, uint32_t ecc_buf_id);
-    bool try_add_ecc_wr(Transaction * trans, uint32_t ecc_buf_id);
+    bool ecc_try_add_rd_trans(Transaction *trans, uint32_t ecc_buf_id);
+    bool ecc_try_add_wr_trans(Transaction *trans, uint32_t ecc_buf_id);
+    bool try_add_ecc_rd(Transaction *trans, uint32_t ecc_buf_id);
+    bool try_add_ecc_wr(Transaction *trans, uint32_t ecc_buf_id);
     void update();
     void get_pdu_addr(ECC_BUF_Entry *buf, Transaction *trans);
 
@@ -122,18 +130,18 @@ public :
     unsigned iecc_wdata_cnt;
     unsigned backpress_cnt;
 
-    //bool MERGE_ENABLE;
+    // bool MERGE_ENABLE;
     bool ecc_merge_flag;
     bool PREFETCH_ENABLE;
     ECC_STRATEGY strategy;
-
 
     std::deque<Transaction *> IeccCmdQueue;
     struct wdata {
         uint64_t wdata_delay;
         uint64_t task;
         uint32_t channel;
-        wdata() {
+        wdata()
+        {
             wdata_delay = 0;
             task = 0;
             channel = 0;
@@ -141,18 +149,23 @@ public :
     };
     std::deque<wdata> IeccWdata;
     bool addData(uint32_t *data, uint32_t channel, uint64_t task);
-    void addr_exp(Transaction * trans);
-    void addr_ecc_map(Transaction * trans);
+    void addr_exp(Transaction *trans);
+    void addr_ecc_map(Transaction *trans);
     void iecc_alct();
     void send_command();
     void send_wdata();
-    bool full() {return (iecc_cmd_cnt >= 3);};
-    bool wdata_full() {return (iecc_wdata_cnt >= 1);};
-    std::string trans_type_opcode_iecc(Transaction * trans);
+    bool full()
+    {
+        return (iecc_cmd_cnt >= 3);
+    };
+    bool wdata_full()
+    {
+        return (iecc_wdata_cnt >= 1);
+    };
+    std::string trans_type_opcode_iecc(Transaction *trans);
     void show_buf_state();
 
-    void replace_pri_update(uint32_t id,uint32_t cmd_type);
-
+    void replace_pri_update(uint32_t id, uint32_t cmd_type);
 };
-}
+}  // namespace DRAMSim
 #endif
