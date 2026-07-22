@@ -148,6 +148,7 @@ PFQ::PFQ(unsigned index, MemorySystemTop* top, MPFQ* mpfq, ofstream &DDRSim_log_
     if (PERF_RWGRP_MODE == 0) {
         wbuff_state = WBUFF_IDLE;
         wbuff_state_pre = WBUFF_IDLE;
+        wbuff_rnkgrp_state = WBUFF_NO_RNK_GROUP;
     } else if (PERF_RWGRP_MODE == 1) {
         wbuff_state = WBUFF_NO_GROUP;
         wbuff_state_pre = WBUFF_NO_GROUP;
@@ -633,7 +634,7 @@ bool PFQ::findFreeWsram(Transaction* trans, unsigned need_size) {
             } 
         }      
     } else if (need_size == 4 || need_size == 3) {
-        for (unsigned loc = 0; loc <= (WSRAM_QUEUE_DEPTH - 1); loc += 4) {
+        for (unsigned loc = 0; loc + 3 < WSRAM_QUEUE_DEPTH; loc += 4) {
             bool find_loc = true;
             for (unsigned i = 0; i < 4; i++) {
                 if (wsram_slt[loc+i].state != SLT_IDLE) {
@@ -647,7 +648,19 @@ bool PFQ::findFreeWsram(Transaction* trans, unsigned need_size) {
             }
         }
     } else {
-        assert(0 && "ERROR Data size!!");
+        for (unsigned loc = 0; loc + need_size - 1 < WSRAM_QUEUE_DEPTH; loc += need_size) {
+            bool find_loc = true;
+            for (unsigned i = 0; i < need_size; i++) {
+                if (wsram_slt[loc+i].state != SLT_IDLE) {
+                    find_loc = false;
+                    break;
+                }
+            }
+            if (find_loc) {
+                trans->wsram_idx = loc;
+                return true;
+            }
+        }
     }
     return false;
 }
@@ -1043,6 +1056,7 @@ bool PFQ::PerfQue_pushCmd(Transaction* trans) {
 
 bool PFQ::write_merge(Transaction* trans) {
     for (auto& w : PerfQue) {
+        if (w == nullptr) continue;
         if (w->in_ptc) continue;
         if (w->transactionType == DATA_READ) continue;
         if (w->data_size != 64) continue;
@@ -1750,7 +1764,10 @@ void PFQ::sch_subque() {
                 cur_cmd = cmd;
                 lastselcmd_idx = i;
             } else if (cmd->pri_info == cur_cmd->pri_info) {
-                if (lru_arb(i, lastselcmd_idx, 1)) {
+                if (limitSameSidRead(trans, PerfQue[lastselcmd_idx]) ||
+                    (!limitSameSidRead(PerfQue[lastselcmd_idx], trans) &&
+                     (preferSameSidRead(trans, PerfQue[lastselcmd_idx]) ||
+                      (!preferSameSidRead(PerfQue[lastselcmd_idx], trans) && lru_arb(i, lastselcmd_idx, 1))))) {
                     cur_cmd = cmd;
                     lastselcmd_idx = i;
                 }
@@ -1830,6 +1847,68 @@ bool PFQ::sidGroupPass(Transaction* trans) {
     }
 
     return true;
+}
+
+bool PFQ::preferSameSidRead(Transaction* candidate, Transaction* current) const {
+    if (!PREFER_SAME_SID_READ) return false;
+    if (candidate == nullptr || current == nullptr) return false;
+    if (candidate->transactionType != DATA_READ || current->transactionType != DATA_READ) return false;
+    if (candidate->timeout || current->timeout) return false;
+    if (linked_ptcs_.empty()) return false;
+    auto ptc = linked_ptcs_[ptcID(candidate->channel)];
+    if (ptc->PreCmd.type != READ_CMD) return false;
+    if (candidate->rank != ptc->PreCmd.rank || current->rank != ptc->PreCmd.rank) return false;
+    bool candidate_same_sid = candidate->sid == ptc->PreCmd.sid;
+    bool current_same_sid = current->sid == ptc->PreCmd.sid;
+    if (candidate_same_sid == current_same_sid) return false;
+    if (candidate_same_sid && MAX_SAME_SID_READ > 0 && ptc->ser_sid_cnt >= MAX_SAME_SID_READ) return false;
+    return candidate_same_sid;
+}
+
+bool PFQ::preferSameSidRead(arb_cmd* candidate, arb_cmd* current) const {
+    if (!PREFER_SAME_SID_READ) return false;
+    if (candidate == nullptr || current == nullptr) return false;
+    if (candidate->type != DATA_READ || current->type != DATA_READ) return false;
+    if (linked_ptcs_.empty()) return false;
+    auto ptc = linked_ptcs_[0];
+    if (ptc->PreCmd.type != READ_CMD) return false;
+    if (candidate->rank != ptc->PreCmd.rank || current->rank != ptc->PreCmd.rank) return false;
+    bool candidate_same_sid = candidate->sid == ptc->PreCmd.sid;
+    bool current_same_sid = current->sid == ptc->PreCmd.sid;
+    if (candidate_same_sid == current_same_sid) return false;
+    if (candidate_same_sid && MAX_SAME_SID_READ > 0 && ptc->ser_sid_cnt >= MAX_SAME_SID_READ) return false;
+    return candidate_same_sid;
+}
+
+bool PFQ::limitSameSidRead(Transaction* candidate, Transaction* current) const {
+    if (!LIMIT_SAME_SID_READ) return false;
+    if (MAX_CONTINUOUS_SAME_SID_READ == 0) return false;
+    if (candidate == nullptr || current == nullptr) return false;
+    if (candidate->transactionType != DATA_READ || current->transactionType != DATA_READ) return false;
+    if (candidate->timeout || current->timeout) return false;
+    if (linked_ptcs_.empty()) return false;
+    auto ptc = linked_ptcs_[ptcID(candidate->channel)];
+    if (ptc->PreCmd.type != READ_CMD) return false;
+    if (candidate->rank != ptc->PreCmd.rank || current->rank != ptc->PreCmd.rank) return false;
+    if (ptc->ser_sid_cnt < MAX_CONTINUOUS_SAME_SID_READ) return false;
+    bool candidate_same_sid = candidate->sid == ptc->PreCmd.sid;
+    bool current_same_sid = current->sid == ptc->PreCmd.sid;
+    return !candidate_same_sid && current_same_sid;
+}
+
+bool PFQ::limitSameSidRead(arb_cmd* candidate, arb_cmd* current) const {
+    if (!LIMIT_SAME_SID_READ) return false;
+    if (MAX_CONTINUOUS_SAME_SID_READ == 0) return false;
+    if (candidate == nullptr || current == nullptr) return false;
+    if (candidate->type != DATA_READ || current->type != DATA_READ) return false;
+    if (linked_ptcs_.empty()) return false;
+    auto ptc = linked_ptcs_[0];
+    if (ptc->PreCmd.type != READ_CMD) return false;
+    if (candidate->rank != ptc->PreCmd.rank || current->rank != ptc->PreCmd.rank) return false;
+    if (ptc->ser_sid_cnt < MAX_CONTINUOUS_SAME_SID_READ) return false;
+    bool candidate_same_sid = candidate->sid == ptc->PreCmd.sid;
+    bool current_same_sid = current->sid == ptc->PreCmd.sid;
+    return !candidate_same_sid && current_same_sid;
 }
 
 std::set<unsigned> PFQ::getPtcExistRank() {
@@ -2207,7 +2286,10 @@ void PFQ::arb_node() {
                 lastcmd_seltime = now();
                 // update_lru(i, 2, selected_cmd);
             } else if (ArbCmd[i]->pri_info == selected_cmd->pri_info) {
-                if (lru_arb(i, lastselcmd_subq_idx, 2)) {
+                if (limitSameSidRead(ArbCmd[i], selected_cmd) ||
+                    (!limitSameSidRead(selected_cmd, ArbCmd[i]) &&
+                     (preferSameSidRead(ArbCmd[i], selected_cmd) ||
+                      (!preferSameSidRead(selected_cmd, ArbCmd[i]) && lru_arb(i, lastselcmd_subq_idx, 2))))) {
                     selected_cmd = ArbCmd[i];
                     lastselcmd_subq_idx = i;
                     lastcmd_seltime = now();
@@ -2476,9 +2558,11 @@ void PFQ::updatePreNCmd(arb_cmd cmd) {
 /***************************************************************************************************
 Descriptor: stateTransition& --update_rwgroup_state
 ****************************************************************************************************/
-void PFQ::stateTransition() {
-    if (PERF_RWGRP_MODE != 0) return;
-    unsigned que_read_cnt = rcmd_cnt + rel_rcmd_cnt;  
+void PFQ:: stateTransition()
+{
+    if (PERF_RWGRP_MODE != 0)
+        return;
+    unsigned que_read_cnt  = rcmd_cnt + rel_rcmd_cnt;
     unsigned que_write_cnt = wcmd_cnt + rel_wcmd_cnt;
     // count ptc empty state
     bool allptcs_empty = true;
@@ -2494,64 +2578,101 @@ void PFQ::stateTransition() {
         ptc_empty_cnt = 0;
     }
     // initialize
-    for (size_t i = 0; i < NUM_RANKS; i ++) {
-        perf_has_hqos[i] = false;
+    for (size_t i = 0; i < NUM_RANKS; i++) {
+        perf_has_hqos           [i] = false;
         que_read_highqos_vld_cnt[i] = 0;
     }
-    
-    //check if valid read/write cmd
-    bool has_read_cmd = false;
+
+    // check if valid read/write cmd
+    bool has_read_cmd  = false;
     bool has_write_cmd = false;
-    for (auto& trans : PerfQue) {
-        if (trans == nullptr) continue;
-        if (trans->conflict_state == nullptr) continue;
-        bool is_read_cmd = (trans->transactionType == DATA_READ);
-        bool is_write_cmd = (trans->transactionType == DATA_WRITE);
-        auto& conf = trans->conflict_state;
-        unsigned sub_channel = (trans->bankIndex % NUM_BANKS) / (linked_ptcs_[ptcID(trans->channel)]->sc_bank_num);
-        
+    for (auto &trans : PerfQue) {
+        if (trans == nullptr)
+            continue;
+        if (trans->conflict_state == nullptr)
+            continue;
+        bool     is_read_cmd  = (trans->transactionType == DATA_READ);
+        bool     is_write_cmd = (trans->transactionType == DATA_WRITE);
+        auto     &conf        = trans->conflict_state;
+        unsigned sub_channel  = (trans->bankIndex % NUM_BANKS) / (linked_ptcs_[ptcID(trans->channel)]->sc_bank_num);
+
         // check if any high qos cmd in perf queue
-        if (is_read_cmd && trans->qos >= PERF_SWITCH_HQOS_LEVEL) { 
+        if (is_read_cmd && trans->qos >= PERF_SWITCH_HQOS_LEVEL) {
             if (!trans->in_ptc && !trans->fast_rd && !trans->perf_addrconf) {
                 perf_has_hqos[trans->rank] = true;
-                que_read_highqos_vld_cnt[trans->rank] ++;
+                que_read_highqos_vld_cnt[trans->rank]++;
             }
         }
 
-        if (conf->perf.ad_conf_cnt > 0) continue;
-        if (linked_ptcs_[ptcID(trans->channel)]->refreshALL[trans->rank][sub_channel].refreshing) continue;
-        if (linked_ptcs_[ptcID(trans->channel)]->refreshPerBank[trans->bankIndex].refreshing) continue;
-        if (trans->bp_by_tout) continue;
+        if (conf->perf.ad_conf_cnt > 0)
+            continue;
+        if (linked_ptcs_[ptcID(trans->channel)]->refreshALL[trans->rank][sub_channel].refreshing)
+            continue;
+        if (linked_ptcs_[ptcID(trans->channel)]->refreshPerBank[trans->bankIndex].refreshing)
+            continue;
+        if (trans->bp_by_tout)
+            continue;
         if (is_read_cmd) {
             has_read_cmd = true;
         } else if (is_write_cmd && trans->data_ready_cnt == (trans->burst_length + 1)) {
             has_write_cmd = true;
         }
     }
-    
-    unsigned perf_read_hqos_cnt = (unsigned)accumulate(que_read_highqos_cnt.begin(), que_read_highqos_cnt.end(), 0); 
-    unsigned perf_has_hqos_vld = (unsigned)accumulate(perf_has_hqos.begin(), perf_has_hqos.end(), 0); 
-    //highqos w2r trigger
-    bool high_qos_trig = PERF_RCMD_HQOS_W2R_SWITCH_EN && (perf_read_hqos_cnt >= PERF_RCMD_HQOS_W2R_RLEVELH) && (perf_has_hqos_vld >= 1);
-    
-    //ptc highqos rank trigger
+
+    unsigned perf_read_hqos_cnt = (unsigned)accumulate(que_read_highqos_cnt.begin(), que_read_highqos_cnt.end(), 0);
+    unsigned perf_has_hqos_vld  = (unsigned)accumulate(perf_has_hqos.begin(), perf_has_hqos.end(), 0);
+    // highqos w2r trigger
+    bool high_qos_trig = 
+        PERF_RCMD_HQOS_W2R_SWITCH_EN && (perf_read_hqos_cnt >= PERF_RCMD_HQOS_W2R_RLEVELH) && (perf_has_hqos_vld >= 1);
+    bool pfq_read_pressure = (rcmd_cnt >= EARLY_W2R_PF_TH) && (rcmd_cnt >= wcmd_cnt);
+    bool total_read_pressure = (que_read_cnt + EARLY_W2R_GAP_TH >= que_write_cnt);
+    bool ptc_write_not_far_ahead = (rel_wcmd_cnt <= rel_rcmd_cnt + EARLY_W2R_PTC_TH);
+    bool queue_balance_w2r = has_read_cmd && total_read_pressure && ptc_write_not_far_ahead
+                             && (pfq_read_pressure || (rcmd_cnt >= (EARLY_W2R_PF_TH + 4)));
+
+    // ptc highqos rank trigger
     if (PTC_HQOS_RANK_SWITCH_EN) {
-        for (size_t i = 0; i < NUM_RANKS; i ++) {
-            if (rank_cmd_high_qos[i]) rank_cmd_high_qos[i] = (que_read_highqos_vld_cnt[i] >= PERF_RCMD_HQOS_RANK_SWITCH_LEVELL);
-            else rank_cmd_high_qos[i] = (que_read_highqos_vld_cnt[i] >= PERF_RCMD_HQOS_RANK_SWITCH_LEVELH);
+        for (size_t i = 0; i < NUM_RANKS; i++) {
+            if (rank_cmd_high_qos[i])
+                rank_cmd_high_qos[i] = (que_read_highqos_vld_cnt[i] >= PERF_RCMD_HQOS_RANK_SWITCH_LEVELL);
+            else
+                rank_cmd_high_qos[i] = (que_read_highqos_vld_cnt[i] >= PERF_RCMD_HQOS_RANK_SWITCH_LEVELH);
         }
     }
 
     switch (wbuff_state) {
-        case WBUFF_NO_GROUP : {
+        case WBUFF_NO_GROUP: {
+            if (DEBUG_BUS) {
+                PRINT_SPD_PFQ(ch, 
+                    "{:10} -- PERF_ST STATE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] DMC[R:{} "
+                    "W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} ser_read={} "
+                    "has_read_cmd={} has_write_cmd={} high_qos_trig={} ptc_emp_cnt={}",
+                    now(),
+                    wcmd_cnt,
+                    rcmd_cnt,
+                    rel_wcmd_cnt,
+                    rel_rcmd_cnt,
+                    linked_ptcs_[0]->Read_Cnt(),
+                    linked_ptcs_[0]->Write_Cnt(),
+                    linked_ptcs_[0]->availability,
+                    state_trig,
+                    ser_sch_write,
+                    no_cmd_sch_th,
+                    wr_adtimeout_cnt,
+                    ser_read_cnt,
+                    has_read_cmd,
+                    has_write_cmd,
+                    high_qos_trig,
+                    ptc_empty_cnt);
+            }
             wbuff_state_pre = WBUFF_NO_GROUP;
             if (PERF_NG_HOLD_WR_EN) {
                 if (PERF_NG_HOLD_WR_MODE == 0) {
-                    nogrp_cnt ++; 
-                
+                    nogrp_cnt++;
+
                 } else if (PERF_NG_HOLD_WR_MODE == 1) {
                     if (que_read_cnt == 0 && que_write_cnt > 0) {
-                        nogrp_cnt ++; 
+                        nogrp_cnt++;
                     } else if (que_read_cnt > 0) {
                         nogrp_cnt = 0;
                     }
@@ -2559,79 +2680,131 @@ void PFQ::stateTransition() {
             }
             if (GetPerfQsize() >= PERF_ENGRP_LEVEL) {
                 if (que_write_cnt >= PERF_CMD_WLEVELH || !has_read_cmd) {
-                    state_trig = 1;
-                    ser_sch_write = *wr_most_level[linked_ptcs_[0]->occ][state_trig - 1];
-                    same_bank_cnt = MAP_CONFIG["BANK_CMD_TH"][state_trig - 1];
-                    no_cmd_sch_th = MAP_CONFIG["NO_CMD_SCH_TH"][state_trig - 1];
-                    max_rank = get_max_rank(false);
-                    no_cmd_sch_cnt = 0;
+                    state_trig      = 1;
+                    ser_sch_write   = *wr_most_level[linked_ptcs_[0]->occ][state_trig - 1];
+                    same_bank_cnt   = MAP_CONFIG["BANK_CMD_TH"][state_trig - 1];
+                    no_cmd_sch_th   = MAP_CONFIG["NO_CMD_SCH_TH"][state_trig - 1];
+                    max_rank        = get_max_rank(false);
+                    no_cmd_sch_cnt  = 0;
                     no_rcmd_sch_cnt = 0;
-                    serial_cmd_cnt = 0;
-                    ser_read_cnt = 0;
-                    ptc_empty_cnt = 0;
-                    nogrp_cnt = 0;
-                    wbuff_state = WBUFF_WRITE;
+                    serial_cmd_cnt  = 0;
+                    ser_read_cnt    = 0;
+                    ptc_empty_cnt   = 0;
+                    nogrp_cnt       = 0;
+                    wbuff_state     = WBUFF_WRITE;
                     if (DEBUG_BUS) {
-                        PRINTN(setw(10)<<now()<<" -- PERF_ST NG to WRITE, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                                <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                                <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                                <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-                                <<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                                <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt<<" has_read_cmd="<<has_read_cmd
-                                <<" has_write_cmd="<<has_write_cmd<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                        PRINT_SPD_PFQ(ch, 
+                            "{:10} -- PERF_ST NG to WRITE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                            "DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} "
+                            "wr_tout_cnt={} ser_read={} has_read_cmd={} has_write_cmd={} ptc_emp_cnt={}",
+                            now(),
+                            wcmd_cnt,
+                            rcmd_cnt,
+                            rel_wcmd_cnt,
+                            rel_rcmd_cnt,
+                            linked_ptcs_[0]->Read_Cnt(),
+                            linked_ptcs_[0]->Write_Cnt(),
+                            linked_ptcs_[0]->availability,
+                            state_trig,
+                            ser_sch_write,
+                            no_cmd_sch_th,
+                            wr_adtimeout_cnt,
+                            ser_read_cnt,
+                            has_read_cmd,
+                            has_write_cmd,
+                            ptc_empty_cnt);
                     }
                 } else {
-                    max_rank = get_max_rank(true);
-                    no_cmd_sch_cnt = 0;
+                    max_rank        = get_max_rank(true);
+                    no_cmd_sch_cnt  = 0;
                     no_rcmd_sch_cnt = 0;
-                    serial_cmd_cnt = 0;
-                    ser_write_cnt = 0;
-                    ptc_empty_cnt = 0;
-                    nogrp_cnt = 0;
-                    wbuff_state = WBUFF_IDLE;
+                    serial_cmd_cnt  = 0;
+                    ser_write_cnt   = 0;
+                    ptc_empty_cnt   = 0;
+                    nogrp_cnt       = 0;
+                    wbuff_state     = WBUFF_IDLE;
                     if (DEBUG_BUS) {
-                        PRINTN(setw(10)<<now()<<" -- PERF_ST NG to IDLE, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                                <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                                <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                                <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-                                <<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                                <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt<<" has_read_cmd="<<has_read_cmd
-                                <<" has_write_cmd="<<has_write_cmd<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                        PRINT_SPD_PFQ(ch, 
+                            "{:10} -- PERF_ST NG to IDLE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                            "DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} "
+                            "wr_tout_cnt={} ser_read={} has_read_cmd={} has_write_cmd={} ptc_emp_cnt={}",
+                            now(),
+                            wcmd_cnt,
+                            rcmd_cnt,
+                            rel_wcmd_cnt,
+                            rel_rcmd_cnt,
+                            linked_ptcs_[0]->Read_Cnt(),
+                            linked_ptcs_[0]->Write_Cnt(),
+                            linked_ptcs_[0]->availability,
+                            state_trig,
+                            ser_sch_write,
+                            no_cmd_sch_th,
+                            wr_adtimeout_cnt,
+                            ser_read_cnt,
+                            has_read_cmd,
+                            has_write_cmd,
+                            ptc_empty_cnt);
                     }
                 }
             }
             break;
         }
-        case WBUFF_IDLE : {
+        case WBUFF_IDLE: {
             if (DEBUG_BUS) {
-                PRINTN(setw(10)<<now()<<" -- PERF_ST STATE, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                        <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                        <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                        <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-                        <<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                        <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt
-                        <<" has_read_cmd="<<has_read_cmd<<" has_write_cmd="<<has_write_cmd
-                        <<" high_qos_trig="<<high_qos_trig<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                PRINT_SPD_PFQ(ch, 
+                    "{:10} -- PERF_ST STATE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] DMC[R:{} "
+                    "W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} ser_read={} "
+                    "has_read_cmd={} has_write_cmd={} high_qos_trig={} ptc_emp_cnt={}",
+                    now(),
+                    wcmd_cnt,
+                    rcmd_cnt,
+                    rel_wcmd_cnt,
+                    rel_rcmd_cnt,
+                    linked_ptcs_[0]->Read_Cnt(),
+                    linked_ptcs_[0]->Write_Cnt(),
+                    linked_ptcs_[0]->availability,
+                    state_trig,
+                    ser_sch_write,
+                    no_cmd_sch_th,
+                    wr_adtimeout_cnt,
+                    ser_read_cnt,
+                    has_read_cmd,
+                    has_write_cmd,
+                    high_qos_trig,
+                    ptc_empty_cnt);
             }
             wbuff_state_pre = WBUFF_IDLE;
             if (GetPerfQsize() < PERF_EXGRP_LEVEL) {
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST IDLE to NG, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-							<<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                            <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt<<" has_read_cmd="<<has_read_cmd
-                            <<" has_write_cmd="<<has_write_cmd<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                    PRINT_SPD_PFQ(ch, 
+                        "{:10} -- PERF_ST IDLE to NG, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                        "DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} "
+                        "ser_read={} has_read_cmd={} has_write_cmd={} ptc_emp_cnt={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        state_trig,
+                        ser_sch_write,
+                        no_cmd_sch_th,
+                        wr_adtimeout_cnt,
+                        ser_read_cnt,
+                        has_read_cmd,
+                        has_write_cmd,
+                        ptc_empty_cnt);
                 }
-                max_rank = get_max_rank(false);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(false);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_read_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                wbuff_state = WBUFF_NO_GROUP;
+                serial_cmd_cnt  = 0;
+                ser_read_cnt    = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                wbuff_state     = WBUFF_NO_GROUP;
             } else if (has_wr_tout && !has_rd_tout && TOUT_FORCE_RWGRP_EN) {
                 if (state_trig == 0) {
                     state_trig = 1;
@@ -2640,23 +2813,35 @@ void PFQ::stateTransition() {
                 same_bank_cnt = MAP_CONFIG["BANK_CMD_TH"][state_trig - 1];
                 no_cmd_sch_th = MAP_CONFIG["NO_CMD_SCH_TH"][state_trig - 1];
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST IDLE to WRITE (TOUT), WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-							<<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                            <<" has_wr_tout="<<has_wr_tout<<" has_rd_tout="<<has_rd_tout<<endl);
+                    PRINT_SPD_PFQ(ch, "{:10} -- PERF_ST IDLE to WRITE (TOUT), WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} "
+                                  "rel_rcmd_cnt={}] DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} "
+                                  "no_cmd_sch_th={} has_wr_tout={} has_rd_tout={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        state_trig,
+                        ser_sch_write,
+                        no_cmd_sch_th,
+                        has_wr_tout,
+                        has_rd_tout);
                 }
-                max_rank = get_max_rank(false);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(false);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_read_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                sch_level_cnt[state_trig] ++;
+                serial_cmd_cnt  = 0;
+                ser_read_cnt    = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                sch_level_cnt[state_trig]++;
                 wbuff_state = WBUFF_WRITE;
-            } else if (((wbuff_state_gap == 0 && state_trig != 0) || (!has_read_cmd && PERF_FAST_R2W_EN) || (ptc_empty_cnt > PTC_EMPTY_RD_TH)) && has_write_cmd && !high_qos_trig) {
+            } else if (((wbuff_state_gap == 0 && state_trig != 0) || (!has_read_cmd && PERF_FAST_R2W_EN) ||
+                           (ptc_empty_cnt > PTC_EMPTY_RD_TH)) &&
+                       has_write_cmd && !high_qos_trig) {
                 if (state_trig == 0) {
                     state_trig = 1;
                 }
@@ -2664,94 +2849,173 @@ void PFQ::stateTransition() {
                 same_bank_cnt = MAP_CONFIG["BANK_CMD_TH"][state_trig - 1];
                 no_cmd_sch_th = MAP_CONFIG["NO_CMD_SCH_TH"][state_trig - 1];
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST IDLE to WRITE, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-							<<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                            <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt
-                            <<" has_read_cmd="<<has_read_cmd<<" has_write_cmd="<<has_write_cmd
-                            <<" high_qos_trig="<<high_qos_trig<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                    PRINT_SPD_PFQ(ch, 
+                        "{:10} -- PERF_ST IDLE to WRITE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                        "DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} "
+                        "ser_read={} has_read_cmd={} has_write_cmd={} high_qos_trig={} ptc_emp_cnt={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        state_trig,
+                        ser_sch_write,
+                        no_cmd_sch_th,
+                        wr_adtimeout_cnt,
+                        ser_read_cnt,
+                        has_read_cmd,
+                        has_write_cmd,
+                        high_qos_trig,
+                        ptc_empty_cnt);
                 }
-                max_rank = get_max_rank(false);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(false);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_read_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                sch_level_cnt[state_trig] ++;
+                serial_cmd_cnt  = 0;
+                ser_read_cnt    = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                sch_level_cnt[state_trig]++;
                 wbuff_state = WBUFF_WRITE;
             }
             break;
         }
-        case WBUFF_WRITE : {
+        case WBUFF_WRITE: {
+            if (DEBUG_BUS) {
+                PRINT_SPD_PFQ(ch, 
+                    "{:10} -- PERF_ST STATE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] DMC[R:{} "
+                    "W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} ser_read={} "
+                    "has_read_cmd={} has_write_cmd={} high_qos_trig={} ptc_emp_cnt={}",
+                    now(),
+                    wcmd_cnt,
+                    rcmd_cnt,
+                    rel_wcmd_cnt,
+                    rel_rcmd_cnt,
+                    linked_ptcs_[0]->Read_Cnt(),
+                    linked_ptcs_[0]->Write_Cnt(),
+                    linked_ptcs_[0]->availability,
+                    state_trig,
+                    ser_sch_write,
+                    no_cmd_sch_th,
+                    wr_adtimeout_cnt,
+                    ser_read_cnt,
+                    has_read_cmd,
+                    has_write_cmd,
+                    high_qos_trig,
+                    ptc_empty_cnt);
+            }
             wbuff_state_pre = WBUFF_WRITE;
             if (GetPerfQsize() < PERF_EXGRP_LEVEL) {
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST WRITE to NG, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" state_trig="<<state_trig
-							<<" ser_sch_write="<<ser_sch_write<<" no_cmd_sch_th="<<no_cmd_sch_th
-                            <<" wr_tout_cnt="<<wr_adtimeout_cnt<<" ser_read="<<ser_read_cnt<<" has_read_cmd="<<has_read_cmd
-                            <<" has_write_cmd="<<has_write_cmd<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                    PRINT_SPD_PFQ(ch, 
+                        "{:10} -- PERF_ST WRITE to NG, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                        "DMC[R:{} W:{}] availability={} state_trig={} ser_sch_write={} no_cmd_sch_th={} wr_tout_cnt={} "
+                        "ser_read={} has_read_cmd={} has_write_cmd={} ptc_emp_cnt={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        state_trig,
+                        ser_sch_write,
+                        no_cmd_sch_th,
+                        wr_adtimeout_cnt,
+                        ser_read_cnt,
+                        has_read_cmd,
+                        has_write_cmd,
+                        ptc_empty_cnt);
                 }
-                max_rank = get_max_rank(false);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(false);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_read_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                wbuff_state = WBUFF_NO_GROUP;
+                serial_cmd_cnt  = 0;
+                ser_read_cnt    = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                wbuff_state     = WBUFF_NO_GROUP;
             } else if (has_rd_tout && !has_wr_tout && TOUT_FORCE_RWGRP_EN) {
-                if (state_trig == 5) wbuff_state_gap = 4; // 4 is rtl gap
-                else wbuff_state_gap = 4 * GAP_CNT_BASE + ser_write_cnt * pow(2,GAP_CNT_TIMES);
+                if (state_trig == 5)
+                    wbuff_state_gap = 4;  // 4 is rtl gap
+                else
+                    wbuff_state_gap = 4 * GAP_CNT_BASE + ser_write_cnt * pow(2, GAP_CNT_TIMES);
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST WRITE to IDLE (TOUT), WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" ser_write="<<ser_write_cnt
-                            <<" no_cmd_sch="<<no_cmd_sch_cnt<<" state_trig="<<state_trig
-                            <<" wbuff_state_gap="<<wbuff_state_gap<<" has_rd_tout="<<has_rd_tout
-                            <<" has_wr_tout="<<has_wr_tout<<endl);
+                    PRINT_SPD_PFQ(ch, "{:10} -- PERF_ST WRITE to IDLE (TOUT), WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} "
+                                  "rel_rcmd_cnt={}] DMC[R:{} W:{}] availability={} ser_write={} no_cmd_sch={} "
+                                  "state_trig={} wbuff_state_gap={} has_rd_tout={} has_wr_tout={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        ser_write_cnt,
+                        no_cmd_sch_cnt,
+                        state_trig,
+                        wbuff_state_gap,
+                        has_rd_tout,
+                        has_wr_tout);
                 }
-                max_rank = get_max_rank(true);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(true);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_write_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                wbuff_state = WBUFF_IDLE;
-            } else if (((((ser_write_cnt >= ser_sch_write)||(no_cmd_sch_cnt > no_cmd_sch_th))&&(check_wr_level()==0)) 
-                        || (!has_write_cmd) || (ptc_empty_cnt > PTC_EMPTY_WR_TH) || high_qos_trig) && has_read_cmd) {
-                if (high_qos_trig && has_read_cmd) perf_highqos_trig_grpsw_cnt ++;
-                if (state_trig == 5) wbuff_state_gap = 4; // 4 is rtl gap
-                else wbuff_state_gap = 4 * GAP_CNT_BASE + ser_write_cnt * pow(2,GAP_CNT_TIMES);
+                serial_cmd_cnt  = 0;
+                ser_write_cnt   = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                wbuff_state     = WBUFF_IDLE;
+            } else if (((((ser_write_cnt >= ser_sch_write) || (no_cmd_sch_cnt > no_cmd_sch_th)) &&
+                            (check_wr_level() == 0)) ||
+                           (!has_write_cmd) || (ptc_empty_cnt > PTC_EMPTY_WR_TH) || high_qos_trig || queue_balance_w2r) &&
+                       has_read_cmd) {
+                if (high_qos_trig && has_read_cmd)
+                    perf_highqos_trig_grpsw_cnt++;
+                if (state_trig == 5)
+                    wbuff_state_gap = 4;  // 4 is rtl gap
+                else
+                    wbuff_state_gap = 4 * GAP_CNT_BASE + ser_write_cnt * pow(2, GAP_CNT_TIMES);
                 if (DEBUG_BUS) {
-                    PRINTN(setw(10)<<now()<<" -- PERF_ST WRITE to IDLE, WB[wcmd_cnt="<<wcmd_cnt<<" rcmd_cnt="
-                            <<rcmd_cnt<<" rel_wcmd_cnt="<<rel_wcmd_cnt<<" rel_rcmd_cnt="<<rel_rcmd_cnt
-                            <<"] DMC[R:"<<linked_ptcs_[0]->Read_Cnt()<<" W:"<<linked_ptcs_[0]->Write_Cnt()
-                            <<"] availability="<<linked_ptcs_[0]->availability<<" ser_write="<<ser_write_cnt
-                            <<" no_cmd_sch="<<no_cmd_sch_cnt<<" state_trig="<<state_trig
-                            <<" wbuff_state_gap="<<wbuff_state_gap<<" wr_tout_cnt="<<wr_adtimeout_cnt
-                            <<" has_read_cmd="<<has_read_cmd<<" has_write_cmd="<<has_write_cmd
-                            <<" high_qos_trig="<<high_qos_trig<<" ptc_emp_cnt="<<ptc_empty_cnt<<endl);
+                    PRINT_SPD_PFQ(ch, 
+                        "{:10} -- PERF_ST WRITE to IDLE, WB[wcmd_cnt={} rcmd_cnt={} rel_wcmd_cnt={} rel_rcmd_cnt={}] "
+                        "DMC[R:{} W:{}] availability={} ser_write={} no_cmd_sch={} state_trig={} wbuff_state_gap={} "
+                        "wr_tout_cnt={} has_read_cmd={} has_write_cmd={} high_qos_trig={} ptc_emp_cnt={}",
+                        now(),
+                        wcmd_cnt,
+                        rcmd_cnt,
+                        rel_wcmd_cnt,
+                        rel_rcmd_cnt,
+                        linked_ptcs_[0]->Read_Cnt(),
+                        linked_ptcs_[0]->Write_Cnt(),
+                        linked_ptcs_[0]->availability,
+                        ser_write_cnt,
+                        no_cmd_sch_cnt,
+                        state_trig,
+                        wbuff_state_gap,
+                        wr_adtimeout_cnt,
+                        has_read_cmd,
+                        has_write_cmd,
+                        high_qos_trig,
+                        ptc_empty_cnt);
                 }
-                max_rank = get_max_rank(true);
-                no_cmd_sch_cnt = 0;
+                max_rank        = get_max_rank(true);
+                no_cmd_sch_cnt  = 0;
                 no_rcmd_sch_cnt = 0;
-                serial_cmd_cnt = 0;
-                ser_write_cnt = 0;
-                ptc_empty_cnt = 0;
-                nogrp_cnt = 0;
-                wbuff_state = WBUFF_IDLE;
+                serial_cmd_cnt  = 0;
+                ser_write_cnt   = 0;
+                ptc_empty_cnt   = 0;
+                nogrp_cnt       = 0;
+                wbuff_state     = WBUFF_IDLE;
             }
             break;
         }
-        default:{
+        default: {
             break;
         }
     }
@@ -3672,7 +3936,7 @@ void PFQ::perf_release_wr(uint64_t task, bool release_state) {
                     assert(0);
                 }
                 wsram_slt[slot_idx].state = READING;
-                wsram_slt[slot_idx].wdda = now() + WDDA + i*CLKH2CLKL;
+                wsram_slt[slot_idx].wdda = now() + WDDA + i - 1;
                 if (DEBUG_BUS) {
                     PRINTN(setw(10)<<now()<<" -- Wcmd released, wsram_slt set, slt_idx="<<slot_idx<<", task="<<wsram_slt[slot_idx].task
                     <<", channel="<<wsram_slt[slot_idx].channel<<", wdda="<<wsram_slt[slot_idx].wdda<<endl);
@@ -3756,12 +4020,8 @@ bool PFQ::perf_conflict_intf(uint64_t task) {
 
 bool PFQ::returnReadDataResp(unsigned int channel_num, unsigned long long task,
         double readDataEnterDmcTime, double reqAddToDmcTime, double reqEnterDmcBufTime) {
-    if (mpfq_->ReturnReadData!=NULL) {
-        return (*mpfq_->ReturnReadData)(channel_num, task,
-                readDataEnterDmcTime, reqAddToDmcTime, reqEnterDmcBufTime);
-    } else {
-        return false;
-    }
+    return mpfq_->returnReadData(channel_num, task, readDataEnterDmcTime,
+            reqAddToDmcTime, reqEnterDmcBufTime);
 }
 
 void PFQ::gen_wresp(uint64_t task, uint32_t channel) {
