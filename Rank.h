@@ -1,3 +1,10 @@
+/*
+* Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+* Description: Rank.h
+* Author: l00434636
+* Create: 2020-10-27
+*/
+
 #ifndef _LPDDR_RANK_H
 #define _LPDDR_RANK_H
 
@@ -199,3 +206,4 @@ public:
 };
 }
 #endif
+
