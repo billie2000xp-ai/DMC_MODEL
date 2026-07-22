@@ -16,20 +16,24 @@ class MPFQ;
 class MPTC : public SimulatorObject {
 
 public:
-    MPTC(MemorySystemTop* top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_, vector<ofstream> &cmdnum_log_, vector<vector<ofstream>> &dram_log_);
+    MPTC(MemorySystemTop *top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_,
+        vector<ofstream> &cmdnum_log_, vector<vector<ofstream>> &dram_log_);
     virtual ~MPTC();
 
-    void associateWithPFQs(MPFQ* mpfq);
-    PTC* getPTC(unsigned index) const;
-    Rank* getRank(unsigned ptc_index, unsigned rank_index) const;
-    MemorySystemTop* getMemorySystemTop() const { return memorySystemTop_; }
+    void associateWithPFQs(MPFQ *mpfq);
+    PTC *getPTC(unsigned index) const;
+    Rank *getRank(unsigned ptc_index, unsigned rank_index) const;
+    MemorySystemTop *getMemorySystemTop() const
+    {
+        return memorySystemTop_;
+    }
 
     void update();
 
 private:
     std::vector<std::unique_ptr<PTC>> ptcs_;
     std::vector<std::unique_ptr<Rank>> ranks_;
-    MemorySystemTop* memorySystemTop_;
+    MemorySystemTop *memorySystemTop_;
     void initializeComponents();
 
     string log_path;
@@ -43,6 +47,6 @@ private:
     uint32_t sub_cha;
     uint64_t channel_ohot;
 };
-}
 
-#endif
+}  // namespace DRAMSim
+#endif  // _MPTC_H_
