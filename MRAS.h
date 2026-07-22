@@ -19,18 +19,23 @@ class MemorySystemTop;
 class MRAS : public SimulatorObject {
 
 public:
-    MRAS(MemorySystemTop* top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_, vector<ofstream> &cmdnum_log_);
+    MRAS(MemorySystemTop *top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_,
+        vector<ofstream> &cmdnum_log_);
     virtual ~MRAS();
-    void setMPFQ(MPFQ* mpfq);
+    void setMPFQ(MPFQ *mpfq);
     void initializeIECCs();
-    Inline_ECC* getIECC(unsigned index) const;
-    MemorySystemTop* getMemorySystemTop() const {return memorySystemTop_;}
+    Inline_ECC *getIECC(unsigned index) const;
+    MemorySystemTop *getMemorySystemTop() const
+    {
+        return memorySystemTop_;
+    }
 
     void update();
+
 private:
-    MPFQ* mpfq_;
+    MPFQ *mpfq_;
     std::vector<std::unique_ptr<Inline_ECC>> ieccs_;
-    MemorySystemTop* memorySystemTop_;
+    MemorySystemTop *memorySystemTop_;
     string log_path;
     vector<ofstream> &DDRSim_log;
     vector<ofstream> &trace_log;
@@ -40,5 +45,5 @@ private:
     uint32_t sub_cha;
     uint64_t channel_ohot;
 };
-}
-#endif // _MRAS_H_
+}  // namespace DRAMSim
+#endif  // _MRAS_H_
