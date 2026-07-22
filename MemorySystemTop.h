@@ -32,14 +32,6 @@ struct data_message {
     size_t delay;
 };
 
-struct upstream_rdata_msg {
-    unsigned channel;
-    uint64_t task;
-    double readDataEnterDmcTime;
-    double reqAddToDmcTime;
-    double reqEnterDmcBufTime;
-};
-
 class MRAS;
 class MPFQ;
 class MPTC;
@@ -71,8 +63,6 @@ public:
             TransactionCompleteCB *writeDone,TransactionCompleteCB *readDone, TransactionCompleteCB *cmdDone);
     void InitOutputFiles(unsigned channel);
     bool addData(uint32_t *data, uint32_t channel, uint64_t id);
-    bool returnReadData32(unsigned channel, uint64_t task, double readDataEnterDmcTime,
-            double reqAddToDmcTime, double reqEnterDmcBufTime);
 
     uint32_t getDmcPressureLevel();
     uint32_t getTransQueSize(uint32_t dmc_id, bool isRd);
@@ -106,9 +96,6 @@ public:
 
     std::map<uint64_t,write_msg>write_map;
     std::map<uint64_t,unsigned> upstream_wdata_cnt;
-    TransactionCompleteCB *upstreamReadData;
-    Callback<MemorySystemTop, bool, unsigned, uint64_t, double, double, double> readDataAdapter;
-    std::deque<upstream_rdata_msg> upstream_rdata_queue;
     vector<vector<Transaction *>> PreDmcPipeQueue;
 
     string dmc_log;
