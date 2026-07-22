@@ -1,3 +1,10 @@
+/* $$$!!Warning: Huawei key information asset. No spread without permission.$$$ */
+/* CODEMARK:RKeR1B8WMAfemkt1tTDGp4eOEddgxKn4NOPmdw0w+6Q3n1pxgDEX+kGBiRV20e1NKuLwOh60qWwx
+7DOUvTqsDpJdC/G6ahMCQuRlwWqc+IGKquH6vaaGAGe1zSmcLn5FMd2VBk0upEP5xKZPTVuBjKnw
+SvZMzBtMrQ+w1lxbG5+EFWux51V2bvtZUTAAA+en/pM7ZB5Cy3u0JTs1VqxXwpRNj2MjEMnBjlVP
+t0WZ9x1/9ojfnhO5rk0nCIFapM8qBSEVJeFLA9FUDjt+ZcpTpMk4Nx6ZJtPIEv85Gbs3UhOK62cU
+RVNcD7FJYnyz3D4T# */
+/* $$$!!Warning: Deleting or modifying the preceding information is prohibited.$$$ */
 void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
     //update each bank's state based on the command that was just popped out of the command queue
     //for readability's sake
@@ -16,8 +23,8 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
     }
     unsigned trp_pb = bus_packet.fg_ref ? tRPfg : tRPpb;
     switch (bus_packet.type) {
-        case READ_CMD :
-        case READ_P_CMD :{     //todo: revise for e-mode
+        case READ_CMD  : 
+        case READ_P_CMD: {     //todo: revise for e-mode
             for (auto &state : bankStates) {
                 unsigned state_channel = (state.bankIndex % NUM_BANKS) / sc_bank_num;
                 if (state.rank == rank) { // same rank
@@ -31,9 +38,9 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                         if (IS_HBM2E || IS_HBM3) {
                                             state.state->nextActivate1 = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + trp_pb - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextActivate1);
                                         }
-                                        state.state->nextPerBankRefresh = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPerBankRefresh);
-                                        state.state->nextAllBankRefresh = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextAllBankRefresh);
-                                        state.state->stateChangeEn = true;
+                                        state.state->nextPerBankRefresh   = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPerBankRefresh);
+                                        state.state->nextAllBankRefresh   = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextAllBankRefresh);
+                                        state.state->stateChangeEn        = true;
                                         state.state->stateChangeCountdown = CalcTiming(true, bus_packet.bl, PCFG_TRTP) + CalcCmdCycle(rw_cycle, 1);
                                         } else { // same rank, same sid, same bg, same bank, read
                                         state.state->nextPrecharge = max(now() + CalcTiming(true, bus_packet.bl, PCFG_TRTP) + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPrecharge);
@@ -110,13 +117,13 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                     }
                 }
             }
-            RankState[rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, RL, 0);
-            RankState[rank].wck_on       = true;
-            send_wckfs[rank]             = false;
+            RankState [rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, RL, 0);
+            RankState [rank].wck_on       = true;
+            send_wckfs[rank]              = false;
             break;
         }
-        case WRITE_CMD :
-        case WRITE_P_CMD :{      //todo: revise for e-mode
+        case WRITE_CMD  : 
+        case WRITE_P_CMD: {      //todo: revise for e-mode
             for (auto &state : bankStates) {
                 unsigned state_channel = (state.bankIndex % NUM_BANKS) / sc_bank_num;
                 if (state.rank == rank) { // same rank
@@ -134,18 +141,18 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                         state.state->nextPerBankRefresh   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR)+ trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPerBankRefresh);
                                         state.state->nextAllBankRefresh   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR)+ trp_pb + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextAllBankRefresh);
                                     }
-                                    state.state->nextPrecharge = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR) + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPrecharge);
-                                    state.state->nextRead   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
-                                    state.state->nextReadAp = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
+                                    state.state->nextPrecharge   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR) + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPrecharge);
+                                    state.state->nextRead        = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
+                                    state.state->nextReadAp      = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
                                     state.state->nextWriteMask   = max(now() + CalcWrite2Mwrite(true, true, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMask);
                                     state.state->nextWriteMaskAp = max(now() + CalcWrite2Mwrite(true, true, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMaskAp);
                                 } else { // same rank, same sid, same bg, diff bank
-                                    state.state->nextRead   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
-                                    state.state->nextReadAp = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
+                                    state.state->nextRead        = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
+                                    state.state->nextReadAp      = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
                                     state.state->nextWriteMask   = max(now() + CalcWrite2Mwrite(true, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMask);
                                     state.state->nextWriteMaskAp = max(now() + CalcWrite2Mwrite(true, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMaskAp);
                                 }
-                                state.last_activerow = bus_packet.row;       //todo: revise for e-mode
+                                state.last_activerow = bus_packet.row;  //todo: revise for e-mode
                                 if (!IS_DDR5) {
                                     state.state->nextWrite      = max(now() + CalcTccd(true, bus_packet.bl, tCCD_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWrite);
                                     state.state->nextWriteAp    = max(now() + CalcTccd(true, bus_packet.bl, tCCD_L) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteAp);
@@ -159,8 +166,8 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                 state.state->nextWriteApRmw  = max(now() + CalcTccd(false, bus_packet.bl, tCCD_S) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteApRmw);
                                 state.state->nextWriteMask   = max(now() + CalcWrite2Mwrite(false, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMask);
                                 state.state->nextWriteMaskAp = max(now() + CalcWrite2Mwrite(false, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMaskAp);
-                                state.state->nextRead   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
-                                state.state->nextReadAp = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
+                                state.state->nextRead        = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
+                                state.state->nextReadAp      = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
                             }
                             if (bus_packet.type == WRITE_CMD) {
                                 funcState[rank].nextPde = max(now() + CalcTiming(false, bus_packet.bl, tWRPD) + CalcCmdCycle(rw_cycle, 1), funcState[rank].nextPde);
@@ -212,13 +219,13 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                     }
                 }
             }
-            RankState[rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, WL, 0);
-            RankState[rank].wck_on = true;
-            send_wckfs[rank] = false;
+            RankState [rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, WL, 0);
+            RankState [rank].wck_on       = true;
+            send_wckfs[rank]              = false;
             break;
         }
-        case WRITE_MASK_CMD :// mask write is always BL16, mask write not used for lpddr6   
-        case WRITE_MASK_P_CMD :{
+        case WRITE_MASK_CMD  : // mask write is always BL16, mask write not used for lpddr6   
+        case WRITE_MASK_P_CMD: {
             for (auto &state : bankStates) {
                 if (state.rank == rank) { // same rank
                     if (state.sid == sid) { // same rank, same sid
@@ -229,7 +236,7 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                     if (IS_HBM2E || IS_HBM3) {
                                         state.state->nextActivate1 = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR) + trp_pb - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextActivate1);
                                     } 
-                                    state.state->stateChangeEn = true;
+                                    state.state->stateChangeEn        = true;
                                     state.state->stateChangeCountdown = CalcTiming(false, bus_packet.bl, PCFG_TWR) + CalcCmdCycle(rw_cycle, 1);
                                 }
                                 state.state->nextPrecharge   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWR)   + CalcCmdCycle(rw_cycle, cmd_cycle), state.state->nextPrecharge);
@@ -257,8 +264,8 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                             state.state->nextWriteApRmw  = max(now() + CalcMwrite2Write(false, false, bus_packet.bl)  + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteApRmw);
                             state.state->nextWriteMask   = max(now() + CalcMwrite2Mwrite(false, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMask);
                             state.state->nextWriteMaskAp = max(now() + CalcMwrite2Mwrite(false, false, bus_packet.bl) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextWriteMaskAp);
-                            state.state->nextRead   = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
-                            state.state->nextReadAp = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
+                            state.state->nextRead        = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextRead);
+                            state.state->nextReadAp      = max(now() + CalcTiming(false, bus_packet.bl, PCFG_TWTR) + CalcCmdCycle(rw_cycle, rw_cycle), state.state->nextReadAp);
                         }
                         if (bus_packet.type == WRITE_MASK_CMD) {
                             funcState[rank].nextPde = max(now() + CalcTiming(false, bus_packet.bl, tWRPD)   + CalcCmdCycle(rw_cycle, 1), funcState[rank].nextPde);
@@ -292,9 +299,9 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                     }
                 }
             }
-            RankState[rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, WL, 0);
-            RankState[rank].wck_on       = true;
-            send_wckfs[rank]             = false;
+            RankState [rank].wck_off_time = now() + CalcCasTiming(bus_packet.bl, WL, 0);
+            RankState [rank].wck_on       = true;
+            send_wckfs[rank]              = false;
             break;
         }
         case ACTIVATE1_CMD:{         //todo: revise for e-mode
@@ -326,7 +333,6 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                         if (sid == state.sid) { // same rank, same sid
                             if (state.group == group) { // same rank, same sid, same bg
                                 if (state.bank == bank) { // same rank, same sid, same bg, same bank
-                                    state.state->trc_met_time = now() + tRAS + trp_pb;
                                     state.state->currentBankState = RowActive;
                                     state.state->openRowAddress   = bus_packet.row;
                                     state.state->nextPrecharge    = max(now() + tRAS + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPrecharge);
@@ -354,7 +360,7 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                     } else {
                                         state.state->nextActivate1 = max(now() + tRRD_L - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate1);
                                     }
-                                    state.state->nextActivate2 = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
+                                    state.state->nextActivate2      = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
                                     state.state->nextPerBankRefresh = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPerBankRefresh);
                                     state.state->nextAllBankRefresh = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextAllBankRefresh);
                                 }
@@ -364,20 +370,14 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                                 } else {
                                     state.state->nextActivate1 = max(now() + tRRD_S - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate1);
                                 }
-                                state.state->nextActivate2 = max(now() + tRRD_S + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
+                                state.state->nextActivate2      = max(now() + tRRD_S + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
                                 state.state->nextPerBankRefresh = max(now() + tRRD_S + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPerBankRefresh);
                                 state.state->nextAllBankRefresh = max(now() + tRRD_S + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextAllBankRefresh);
                             }
                         } else { // same rank, diff sid
-                            if (SID_LOOSE) {
-                                state.state->nextActivate1 = max(now() + tRRD_Sdlr - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate1);
-                                state.state->nextActivate2 = max(now() + tRRD_Sdlr + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
-                                state.state->nextPerBankRefresh = max(now() + tRRD_Sdlr + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPerBankRefresh);
-                            } else {
-                                state.state->nextActivate1 = max(now() + tRRD_L - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate1);
-                                state.state->nextActivate2 = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
-                                state.state->nextPerBankRefresh = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPerBankRefresh);
-                            }
+                            state.state->nextActivate1      = max(now() + tRRD_L - unsigned(ceil(OFREQ_RATIO)) + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate1);
+                            state.state->nextActivate2      = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextActivate2);
+                            state.state->nextPerBankRefresh = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextPerBankRefresh);
                             state.state->nextAllBankRefresh = max(now() + tRRD_L + CalcCmdCycle(cmd_cycle, cmd_cycle), state.state->nextAllBankRefresh);
                         }
                     } 
@@ -388,14 +388,14 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
         }
         case PRECHARGE_SB_CMD:{
             for (size_t ba = 0; ba < NUM_BANKS; ba ++) {
-                uint32_t bank_tmp = rank * NUM_BANKS + ba;
-                unsigned bg = ba * NUM_GROUPS / NUM_BANKS;
-                unsigned tppd = (bg == group) ? tPPD_L : tPPD;
+                uint32_t   bank_tmp                       = rank * NUM_BANKS + ba;
+                unsigned   bg                             = ba * NUM_GROUPS / NUM_BANKS;
+                unsigned   tppd                           = (bg == group) ? tPPD_L : tPPD;
                 bankStates[bank_tmp].state->nextPrecharge = max(now() + tppd + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bank_tmp].state->nextPrecharge);
             }
             if (IS_DDR5) {
                 for (size_t i = 0; i < pbr_bg_num; i ++) {
-                    uint32_t bankIndex = i * pbr_bank_num + bus_packet.bankIndex;
+                    uint32_t   bankIndex                              = i * pbr_bank_num + bus_packet.bankIndex;
                     bankStates[bankIndex].state->currentBankState     = Precharging;
                     bankStates[bankIndex].state->stateChangeEn        = true;
                     bankStates[bankIndex].state->stateChangeCountdown = tRPab + CalcCmdCycle(cmd_cycle, 1);
@@ -411,9 +411,9 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
         }
         case PRECHARGE_PB_CMD:{        //todo: revise for e-mode
             for (size_t ba = 0; ba < NUM_BANKS; ba ++) {
-                uint32_t bank_tmp = rank * NUM_BANKS + ba;
-                unsigned bg = ba * NUM_GROUPS / NUM_BANKS;
-                unsigned tppd = (bg == group) ? tPPD_L : tPPD;
+                uint32_t bank_tmp      = rank * NUM_BANKS + ba;
+                unsigned bg            = ba * NUM_GROUPS / NUM_BANKS;
+                unsigned tppd          = (bg == group) ? tPPD_L : tPPD;
                 unsigned state_channel = (bank_tmp % NUM_BANKS) / sc_bank_num;
                 if (sub_channel == state_channel) {    // same rank, same subchannel
                     bankStates[bank_tmp].state->nextPrecharge = max(now() + tppd + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bank_tmp].state->nextPrecharge);
@@ -423,10 +423,10 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
             if (bus_packet.cmd_source == 1 || bus_packet.cmd_source == 2) {
 //                trp_pb += 15; // For pagetimeout and func precharge command
                 if (DMC_RATE <= 3200) {
-                    trp_pb += 7;   // For pagetimeout and func precharge command, low frequency
+                    trp_pb += 7;  // For pagetimeout and func precharge command, low frequency
                 } else {
 //                    trp_pb += 15;    // For pagetimeout and func precharge command 
-                    trp_pb += 0;    // For pagetimeout and func precharge command 
+                    trp_pb += 0;  // For pagetimeout and func precharge command 
                 }
             }
             bankStates[bus_packet.bankIndex].state->stateChangeEn        = true;
@@ -452,7 +452,7 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
         }
         case PRECHARGE_AB_CMD:{       //todo: revise for e-mode
             for (size_t i = 0; i < NUM_BANKS; i ++) {
-                uint32_t bankIndex = rank * NUM_BANKS + i;
+                uint32_t bankIndex     = rank * NUM_BANKS + i;
                 unsigned state_channel = (bankIndex % NUM_BANKS) / sc_bank_num;
                 if (sub_channel == state_channel) {       //same rank, same subchannel
                     bankStates[bankIndex].state->currentBankState     = Precharging;
@@ -581,7 +581,6 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                             bankStates[bankIndex].state->nextActivate2      = max(now() + trfcpb + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bankIndex].state->nextActivate2);
                             bankStates[bankIndex].state->nextPerBankRefresh = max(now() + trfcpb + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bankIndex].state->nextPerBankRefresh);
                             bankStates[bankIndex].state->nextAllBankRefresh = max(now() + trfcpb + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bankIndex].state->nextAllBankRefresh);
-                            bankStates[bankIndex].state->trfcpb_met_time = now() + trfcpb;
                         } else {     //diff bank from one of bank pair in same subchannel
                             if (IS_LP6 && (refresh_cnt_pb[bus_packet.rank][sub_channel] == (pbr_bank_num -1))) {
                                 bankStates[bankIndex].state->nextPerBankRefresh = max(now() + tPBR2PBR_L + CalcCmdCycle(cmd_cycle, cmd_cycle), bankStates[bankIndex].state->nextPerBankRefresh);
@@ -614,6 +613,6 @@ void PTC::tsc_update(const BusPacket &bus_packet,bool hit) {
                 break;
             }
         }
-        default : break;
+        default: break;
     }
 }
