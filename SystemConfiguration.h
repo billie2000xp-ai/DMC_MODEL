@@ -1,3 +1,10 @@
+/*
+* Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+* Description: SystemConfiguration.h
+* Author: l00434636
+* Create: 2020-10-27
+*/
+
 #ifndef _LP_SYSCONFIG_H
 #define _LP_SYSCONFIG_H
 
@@ -14,6 +21,8 @@
 namespace DRAMSim {
 extern std::ofstream cmd_verify_out; //used by BusPacket.cpp if VERIFICATION_OUTPUT is enabled
 extern bool DEBUG_BUS;
+extern bool PRINT_CFG;
+extern bool DEBUG_BANK;
 extern bool RD_APRE_EN;
 extern bool WR_APRE_EN;
 extern bool ENHAN_RD_AP_EN;
@@ -101,7 +110,6 @@ extern bool ENH_PBR_CEIL_EN;
 extern bool DERATING_EN;
 extern unsigned DERATING_RATIO;
 extern bool PBR_PARA_EN;
-extern unsigned PBR_STATE_CYCLE;
 extern bool AREF_OFFSET_EN;
 extern bool SBR_IDLE_EN;
 extern unsigned SBR_REQ_MODE;
@@ -146,6 +154,8 @@ extern unsigned PERF_RD_RELEASE_MODE;
 extern bool PTC_BYP_UPDATE_EN;
 extern bool EXEC_UNLIMIT_EN;
 extern bool PBR_LESS_CMD_EN;
+extern bool ORI_REF_EN;
+extern bool GROUP_REF_EN;
 extern unsigned PBR_LESS_CMD_LEVEL;
 extern unsigned PBR_LESS_CMD_MODE;
 extern unsigned PBR_LOCK_MODE;
@@ -207,7 +217,6 @@ extern unsigned tRCD_WR;
 extern unsigned tRCD;
 extern unsigned tRRD_L;
 extern unsigned tRRD_S;
-extern unsigned tRRD_Sdlr;
 extern unsigned tRPpb;
 extern unsigned tRPab;
 extern unsigned tRPfg;
@@ -242,7 +251,6 @@ extern unsigned tRFCpb;
 extern unsigned tPBR2PBR;
 extern unsigned tPBR2PBR_L;
 extern unsigned tPBR2ACT;
-extern unsigned tPBR2ACT_S;
 extern unsigned tFAW;
 extern unsigned tCMD2SCH;
 extern unsigned tCMD2SCH_BYPACT;
@@ -294,9 +302,6 @@ extern uint64_t IECC_BYPASS_ADDRESS;
 extern bool IECC_BL32_MODE;
 extern unsigned IECC_PRI;
 extern unsigned IECC_CAP_RATIO;
-extern bool ECC_WB_EN;
-extern unsigned ECC_WB_TH;
-extern unsigned ECC_WB_MODE;
 
 extern float POWER_RDINC_K;
 extern float POWER_RDWRAP_K;
@@ -490,6 +495,9 @@ extern bool SIMPLE_RNKGRP_EN;
 extern unsigned ARB_GROUP_NUM;
 extern unsigned ACT_LEFT_CYCLE;
 extern unsigned MAXCNT_SAMEBG;
+extern unsigned PTC_PAGE_TIMEOUT_HIT;
+extern unsigned PTC_PAGE_TIMEOUT_MISS;
+extern unsigned PTC_QOS_MAX;
 extern unsigned PTC_RANK_NUM;
 extern unsigned PTC_QOS_MAX;
 extern unsigned PTC_ADAPT_PRI_MAX;
@@ -572,32 +580,10 @@ extern unsigned CORE_CONCURR_PRD;
 extern bool RPFIFO_EN;
 extern unsigned RPFIFO_DEPTH;
 extern unsigned RPFIFO_AMFULL_TH;
-extern bool ODD_TDM;
-extern bool SIMPLE_BANKTABLE_ENABLE;
-extern bool PREACT_FLOW_CTRL_EN;
-extern unsigned PREACT_FLOW_CTRL_TYPE;
-extern unsigned PREACT_BW_THD;
-extern unsigned PREACT_TBL_THD;
-extern bool SID_LOOSE;
-extern bool SIMPLE_GRP_SID_EN;
-extern unsigned TIMEOUT_SID;
-extern bool TIMEOUT_SID_ENABLE;
-extern unsigned SERIAL_PRE_SIDGRP;
-extern unsigned ENGRP_LR_LEVEL;
-extern unsigned EX_LR_LEVEL;
-extern unsigned LR_LEVELH;
-extern unsigned LR_LEVELL;
-extern unsigned SERIAL_LR_LEVELH;
-extern unsigned SERIAL_LR_LEVELL;
-extern unsigned SID_GRP_PIPE;
-extern unsigned ROW_SEL_MSB;
-extern unsigned ROW_SEL_SMSB;
-extern bool ADDR_EXP_EN;
-extern bool ZHUQUE_ENABLE;
-extern unsigned ZHUQUE_BA_MODE;
-extern bool RAND_BABG;
-extern bool FORCE_SID_SWITCH;
-extern unsigned SID_SW_RATIO;
+extern unsigned EARLY_W2R_PF_TH;
+extern unsigned EARLY_W2R_GAP_TH;
+extern unsigned EARLY_W2R_PTC_TH;
+extern bool W2R_BALANCE_EN;
 
 extern bool DRAM_POWER_EN;
 extern float IDD01, IDD02H, IDD02L, IDD0Q;
