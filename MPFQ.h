@@ -1,3 +1,10 @@
+/*
+ * Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+ * Description: MPFQ.h
+ * Author     : m00943360
+ * Create     : 2025-12-29
+ */
+
 #ifndef _MPFQ_H
 #define _MPFQ_H
 
@@ -25,8 +32,8 @@ using namespace std;
 namespace DRAMSim {
 
 // ============ FORWARD DECLARATIONS ============
-typedef CallbackBase<bool,unsigned,uint64_t,double,double,double> Callback_t;
-typedef Transaction& t_ptr;
+typedef CallbackBase<bool, unsigned, uint64_t, double, double, double> Callback_t;
+typedef Transaction &t_ptr;
 
 class PFQ;
 class MPTC;
@@ -36,52 +43,49 @@ class MemorySystemTop;
 
 class MPFQ : public SimulatorObject {
 private:
-    // ============ PRIVATE MEMBER VARIABLES ============                              
-    MemorySystemTop* memorySystemTop_;
+    // ============ PRIVATE MEMBER VARIABLES ============
+    MemorySystemTop *memorySystemTop_;
     // Logging
     vector<ofstream> &DDRSim_log;
-    vector<ofstream> &trace_log;    
-    ofstream perf_log;              
+    vector<ofstream> &trace_log;
+    ofstream perf_log;
     string log_path;
     uint64_t channel_ohot;
 
     std::vector<std::unique_ptr<PFQ>> pfqs_;
-    MPTC* mptc_;
+    MPTC *mptc_;
 
 public:
     // ============ CONSTRUCTOR AND DESTRUCTOR ============
-    MPFQ(MemorySystemTop* top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_);
+    MPFQ(MemorySystemTop *top, vector<ofstream> &DDRSim_log_, vector<ofstream> &trace_log_);
     virtual ~MPFQ();
-    
-    void addFastRead(unsigned pfq_idx); 
-    bool returnReadData(data_packet& packet);
-    bool returnReadData(unsigned channel, uint64_t task, double readDataEnterDmcTime,
-            double reqAddToDmcTime, double reqEnterDmcBufTime);
+
+    void addFastRead(unsigned pfq_idx);
+    bool returnReadData(data_packet &packet);
     void update();
 
-    void setMPTC(MPTC* mptc);
+    void setMPTC(MPTC *mptc);
     void associateWithPTCs();
-    PFQ* getPFQ(unsigned index) const;
-    MemorySystemTop* getMemorySystemTop() const {return memorySystemTop_;}
+    PFQ *getPFQ(unsigned index) const;
+    MemorySystemTop *getMemorySystemTop() const
+    {
+        return memorySystemTop_;
+    }
 
     // ============ CALLBACK REGISTRATION ============
-    void RegisterCallbacks(Callback_t* readData,
-                           Callback_t* writeCB,
-                           Callback_t* readCB,
-                           Callback_t* cmdCB);
-    
+    void RegisterCallbacks(Callback_t *readData, Callback_t *writeCB, Callback_t *readCB, Callback_t *cmdCB);
+
     // ============ STATUS QUERY FUNCTIONS ============
-    uint8_t get_occ(uint32_t chl) const;           
+    uint8_t get_occ(uint32_t chl) const;
     uint8_t get_bandwidth(uint32_t chl) const;
 
     // Callback function pointers
-    Callback_t* ReturnReadData;     
-    Callback_t* WriteResp;          
-    Callback_t* ReadResp;           
-    Callback_t* CmdResp;                               
-              
+    Callback_t *ReturnReadData;
+    Callback_t *WriteResp;
+    Callback_t *ReadResp;
+    Callback_t *CmdResp;
 };
 
-} // namespace DRAMSim
+}  // namespace DRAMSim
 
-#endif // _MPFQ_H
+#endif  // _MPFQ_H
