@@ -197,6 +197,23 @@ bool MPFQ::returnReadData(data_packet& packet) {
     return true;
 }
 
+bool MPFQ::returnReadData(unsigned channel, uint64_t task, double readDataEnterDmcTime,
+        double reqAddToDmcTime, double reqEnterDmcBufTime) {
+    if (ReturnReadData == NULL) {
+        return false;
+    }
+    if (IS_HBM3) {
+        bool first_beat_accepted = (*ReturnReadData)(channel, task,
+                readDataEnterDmcTime, reqAddToDmcTime, reqEnterDmcBufTime);
+        bool second_beat_accepted = (*ReturnReadData)(channel, task,
+                readDataEnterDmcTime,
+                reqAddToDmcTime, reqEnterDmcBufTime);
+        return first_beat_accepted && second_beat_accepted;
+    }
+    return (*ReturnReadData)(channel, task, readDataEnterDmcTime,
+            reqAddToDmcTime, reqEnterDmcBufTime);
+}
+
 // ============================
 // CALLBACK REGISTRATION
 // ============================
