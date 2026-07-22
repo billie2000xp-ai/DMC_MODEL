@@ -55,6 +55,8 @@ public:
     
     void addFastRead(unsigned pfq_idx); 
     bool returnReadData(data_packet& packet);
+    bool returnReadData(unsigned channel, uint64_t task, double readDataEnterDmcTime,
+            double reqAddToDmcTime, double reqEnterDmcBufTime);
     void update();
 
     void setMPTC(MPTC* mptc);
