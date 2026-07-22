@@ -24,13 +24,11 @@ namespace DRAMSim {
 #ifdef SYSARCH_PLATFORM
 MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogPath,
         HALib::Configurable* cfg) : 
-        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0), upstreamReadData(NULL),
-        readDataAdapter(this, &MemorySystemTop::returnReadData32) {
+        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0) {
 #else
 MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogPath,
         int argc, char *argv[]) : 
-        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0), upstreamReadData(NULL),
-        readDataAdapter(this, &MemorySystemTop::returnReadData32) {
+        hhaId(hhaId), log_path(LogPath), start_cycle(0), end_cycle(0) {
 #endif
 
 #ifdef SYSARCH_PLATFORM
@@ -390,6 +388,8 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     RAND_BABG = cfg->getBool("RAND_BABG");
     FORCE_SID_SWITCH = cfg->getBool("FORCE_SID_SWITCH");
     SID_SW_RATIO = cfg->getNumber("SID_SW_RATIO");
+    SID_SCRAMBLE_EN = cfg->getBool("SID_SCRAMBLE_EN");
+    SID_SCRAMBLE_MODE = cfg->getNumber("SID_SCRAMBLE_MODE");
 
     if (SYSTEM_CONFIG=="ddrsystem") IniFilename = IniFilePath + "/" + "DDR/" + DDR_TYPE+"_"+to_string(DMC_RATE)+"M"+DDR_MODE+".ini";
     if (SYSTEM_CONFIG=="lpsystem")  IniFilename = IniFilePath + "/" + "LP/" + DDR_TYPE+"_"+to_string(DMC_RATE)+"M"+DDR_MODE+".ini";
@@ -795,6 +795,8 @@ MemorySystemTop::MemorySystemTop(unsigned hhaId, string IniFilePath, string LogP
     GET_PARAM(RAND_BABG, "RAND_BABG", getBool);
     GET_PARAM(FORCE_SID_SWITCH, "FORCE_SID_SWITCH", getBool);
     GET_PARAM(SID_SW_RATIO, "SID_SW_RATIO", getUint);
+    GET_PARAM(SID_SCRAMBLE_EN, "SID_SCRAMBLE_EN", getBool);
+    GET_PARAM(SID_SCRAMBLE_MODE, "SID_SCRAMBLE_MODE", getUint);
 
     if (SYSTEM_CONFIG=="ddrsystem") IniFilename = IniFilePath + "/" + "DDR/" + DDR_TYPE+"_"+to_string(DMC_RATE)+"M"+DDR_MODE+".ini";
     if (SYSTEM_CONFIG=="lpsystem")  IniFilename = IniFilePath + "/" + "LP/" + DDR_TYPE+"_"+to_string(DMC_RATE)+"M"+DDR_MODE+".ini";
@@ -1739,14 +1741,20 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id) {
     }
 
     if (WRITE_BUFFER_ENABLE) {
-        mras_->getIECC(channel / (NUM_CHANS / NUM_PFQS))->addData(data, channel, id) ;
+        bool accepted = mras_->getIECC(channel / (NUM_CHANS / NUM_PFQS))
+                ->addData(data, channel, id);
+        if (!accepted) {
+            upstream_wdata_cnt[id]--;
+            return false;
+        }
     } 
 
-    if (it->second.num_256bit == 0) {
+    unsigned accepted_beats = IS_HBM3 ? 2 : 1;
+    if (it->second.num_256bit < accepted_beats) {
         ERROR(setw(10)<<now()<<" -- ERROR, burst number mismatch, ID="
                 <<id<<", chnl: "<<channel);
     } else {
-        it->second.num_256bit--;
+        it->second.num_256bit -= accepted_beats;
     }
     if (it->second.num_256bit == 0) {
         write_map.erase(id);
@@ -1756,14 +1764,6 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id) {
 }
 
 void MemorySystemTop::update() {
-    if (!upstream_rdata_queue.empty() && upstreamReadData != NULL) {
-        upstream_rdata_msg msg = upstream_rdata_queue.front();
-        if ((*upstreamReadData)(msg.channel, msg.task, msg.readDataEnterDmcTime,
-                msg.reqAddToDmcTime, msg.reqEnterDmcBufTime)) {
-            upstream_rdata_queue.pop_front();
-        }
-    }
-
     if (NUM_CHANS % NUM_PFQS != 0) {
         ERROR("NUM_CHANS / NUM_PFQS must be an integer.");
         ERROR("Current NUM_CHANS = " << NUM_CHANS);
@@ -1845,24 +1845,9 @@ void MemorySystemTop::RegisterCallbacks(
     TransactionCompleteCB *writeDone,
     TransactionCompleteCB *readDone,
     TransactionCompleteCB *cmdDone ) {
-    upstreamReadData = readData;
     for (size_t i = 0; i < NUM_CHANS; i++) {
-        mpfq_->RegisterCallbacks(&readDataAdapter, writeDone, readDone, cmdDone);
+        mpfq_->RegisterCallbacks(readData, writeDone, readDone, cmdDone);
     }
-}
-
-bool MemorySystemTop::returnReadData32(unsigned channel, uint64_t task, double readDataEnterDmcTime,
-        double reqAddToDmcTime, double reqEnterDmcBufTime) {
-    if (upstreamReadData == NULL) return false;
-    if (!upstream_rdata_queue.empty() && upstream_rdata_queue.front().channel == channel) return false;
-    upstream_rdata_msg msg;
-    msg.channel = channel;
-    msg.task = task;
-    msg.readDataEnterDmcTime = readDataEnterDmcTime;
-    msg.reqAddToDmcTime = reqAddToDmcTime;
-    msg.reqEnterDmcBufTime = reqEnterDmcBufTime;
-    upstream_rdata_queue.push_back(msg);
-    return (*upstreamReadData)(channel, task, readDataEnterDmcTime, reqAddToDmcTime, reqEnterDmcBufTime);
 }
 
 void MemorySystemTop::dfs_backpress(unsigned ch, bool backpress) {
