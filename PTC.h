@@ -1,3 +1,10 @@
+/*
+ * Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+ * Description: PTC.h
+ * Author     : l00434636
+ * Create     : 2020-10-27
+ */
+
 #ifndef _PTC_H_
 #define _PTC_H_
 
@@ -14,24 +21,25 @@
 #include <assert.h>
 #include <numeric>
 #include <algorithm>
+#include <unordered_map>
 
 using namespace std;
 
 namespace DRAMSim {
 
 class Inline_ECC;
-typedef Transaction& t_ptr;
+typedef Transaction &t_ptr;
 
 struct task_info {
-    bool rd_finish = false;
-    bool wr_finish = false;
-    bool rd_ecc    = false;
-    bool wr_ecc    = false;
-    uint32_t slt_cnt = 0;
+    bool     rd_finish = false;
+    bool     wr_finish = false;
+    bool     rd_ecc    = false;
+    bool     wr_ecc    = false;
+    uint32_t slt_cnt   = 0;
 };
 
 struct wdata_pipe {
-    uint64_t task = 0;
+    uint64_t task  = 0;
     uint64_t delay = 0;
 };
 
@@ -41,28 +49,42 @@ class MemorySystemTop;
 
 class PTC : public SimulatorObject {
 
-public:
-    //functions
-    PTC(unsigned index, MemorySystemTop* top, ofstream &DDRSim_log_, ofstream &trace_log_, ofstream &cmdnum_log_);
+public: 
+    // functions
+    PTC(unsigned index, MemorySystemTop *top, ofstream &DDRSim_log_, ofstream &trace_log_, ofstream &cmdnum_log_);
     virtual ~PTC();
 
-    void addRank(Rank* rank);
-    void setAssociatedPFQ(PFQ* pfq) { pfq_ = pfq; }
-    unsigned getID() const { return id_; }
-    PFQ* getAssociatedPFQ() const { return pfq_; }
-    MemorySystemTop* getMemorySystemTop() const { return memorySystemTop_; }
-    Rank* getRank(unsigned index) const;
+    void addRank(Rank *rank);
+    void setAssociatedPFQ(PFQ *pfq)
+    {
+        pfq_ = pfq;
+    }
+    unsigned getID() const
+    {
+        return id_;
+    }
+    PFQ *getAssociatedPFQ() const
+    {
+        return pfq_;
+    }
+    MemorySystemTop *getMemorySystemTop() const
+    {
+        return memorySystemTop_;
+    }
+    Rank *getRank(unsigned index) const;
 
     bool addTransaction(Transaction *trans, bool fastread);
     void update_even_cycle();
     void noc_read_inform(bool fast_wakeup_rank0, bool fast_wakeup_rank1, bool bus_rempty);
     bool WillAcceptTransaction();
-    bool returnReadData(unsigned int channel_num, unsigned long long task,
-    double readDataEnterDmcTime, double reqAddToDmcTime, double reqEnterDmcBufTime);
-    void ReturnData_statistics(uint64_t task, uint64_t timeAdded, unsigned qos, unsigned mid, unsigned pf_type, unsigned rank);
-    void Cmd2Dfi_statistics(uint64_t task, uint64_t timeAdded, unsigned qos, unsigned mid, unsigned pf_type, unsigned rank);
+    bool returnReadData(unsigned int channel_num, unsigned long long task, double readDataEnterDmcTime,
+        double reqAddToDmcTime, double reqEnterDmcBufTime);
+    void ReturnData_statistics(
+        uint64_t task, uint64_t timeAdded, unsigned qos, unsigned mid, unsigned pf_type, unsigned rank);
+    void Cmd2Dfi_statistics(
+        uint64_t task, uint64_t timeAdded, unsigned qos, unsigned mid, unsigned pf_type, unsigned rank);
     void receive_rdata(unsigned long long task, bool mask_wcmd);
-    void receive_wdata(unsigned *data ,uint64_t task);
+    void receive_wdata(unsigned *data, uint64_t task);
     // void attachRanks(vector<Rank *> *rank);
     unsigned CalcCasTiming(unsigned bl, unsigned sync, unsigned wck_pst);
     unsigned CalcTiming(bool is_trtp, unsigned cmd_bl, unsigned timing);
@@ -83,6 +105,7 @@ public:
     void update_grt_fifo();
     void dfi_pipe();
     void refresh(unsigned sc);
+    void pull_in_refresh(unsigned rank, unsigned sc);
     void all_bank_refresh(unsigned rank, unsigned sc);
     void per_bank_refresh(unsigned rank, unsigned sc);
     void send_pb_refresh(unsigned rank, unsigned sc);
@@ -91,18 +114,19 @@ public:
     void enh_send_pb_refresh(unsigned rank, unsigned sc);
     void enh_send_pb_precharge(unsigned rank, unsigned sc);
     void gd2_dist_refresh();
-    enum DIST_STATE {DIST_IDLE, SEND_ACT1, SEND_ACT2, SEND_PRE};
+    enum DIST_STATE { DIST_IDLE, SEND_ACT1, SEND_ACT2, SEND_PRE };
     struct GD2_DIST_STATE {
         DIST_STATE state;
         unsigned bank;
-        vector <uint32_t> pre_cmd_cnt;
-        vector <uint32_t> dist_pstpnd_num;
+        vector<uint32_t> pre_cmd_cnt;
+        vector<uint32_t> dist_pstpnd_num;
         vector<uint32_t> pre_cmd_cnt_fg;
         bool force_dist_refresh;
-        GD2_DIST_STATE (size_t index) {
+        GD2_DIST_STATE(size_t index)
+        {
             state = DIST_IDLE;
-            bank = index;
-            for (size_t i = 0; i < 4; i ++) {
+            bank  = index;
+            for (size_t i = 0; i < 4; i++) {
                 pre_cmd_cnt.push_back(0);
                 dist_pstpnd_num.push_back(0);
                 pre_cmd_cnt_fg.push_back(0);
@@ -110,7 +134,7 @@ public:
             force_dist_refresh = false;
         }
     };
-    vector <GD2_DIST_STATE> DistRefState;
+    vector<GD2_DIST_STATE> DistRefState;
     struct pre_cmd {
         TransactionType trans_type;
         TransactionCmd type;
@@ -118,19 +142,20 @@ public:
         unsigned bankIndex;
         unsigned sid;
         unsigned group;
-        pre_cmd () {
-            type = READ_CMD;
+        pre_cmd()
+        {
+            type       = READ_CMD;
             trans_type = DATA_READ;
-            rank = 0;
-            bankIndex = 0;
-            sid = 0;
-            group = 0;
+            rank       = 0;
+            bankIndex  = 0;
+            sid        = 0;
+            group      = 0;
         }
     };
     pre_cmd PreCmd;
-    unsigned ser_rw_cnt = 0;
-    unsigned ser_rank_cnt = 0;
-    unsigned ser_sid_cnt = 0;
+    unsigned ser_rw_cnt      = 0;
+    unsigned ser_rank_cnt    = 0;
+    unsigned ser_sid_cnt     = 0;
     unsigned neg_r2w_rank_sw = 0;
     void scheduler();
     void state_fresh();
@@ -139,7 +164,7 @@ public:
     void check_timeout_and_aging();
     void ptc_check_timeout_and_aging();
     void generate_packet(Cmd *c);
-    void tsc_update(const BusPacket &bus_packet,bool hit);
+    void tsc_update(const BusPacket &bus_packet, bool hit);
     void check_conflict(Transaction *trans);
     void sch_pipe();
     bool apply_bank(Transaction *transaction);
@@ -170,13 +195,24 @@ public:
     void ehs_page_adapt_policy();
     void update_deque_fifo();
     // void attachPFQ(PFQ *pfq);
-    inline unsigned data_cnt_perburst(unsigned length) {
-            return ((DmcLog2(length, JEDEC_DATA_BUS_BITS)) / DMC_DATA_BUS_BITS);}
-    unsigned Read_Cnt() {return que_read_cnt;};
-    unsigned Write_Cnt() {return que_write_cnt;};
+    inline unsigned data_cnt_perburst(unsigned length)
+    {
+        return ((DmcLog2(length, JEDEC_DATA_BUS_BITS)) / DMC_DATA_BUS_BITS);
+    }
+    unsigned Read_Cnt()
+    {
+        return que_read_cnt;
+    };
+    unsigned Write_Cnt()
+    {
+        return que_write_cnt;
+    };
     void PostCalcTiming();
     void calc_occ();
-    unsigned get_occ() {return occ;}
+    unsigned get_occ()
+    {
+        return occ;
+    }
     double calc_sqrt(double sum, double sum_pwr2, unsigned cnt);
     void trans_state_init(Transaction *trans);
     uint32_t occ;
@@ -210,19 +246,19 @@ public:
     unsigned TotalDmcWr256B;
     float CalcBwByByte(uint64_t byte, unsigned cycle);
 
-    //fields
+    // fields
     vector<Transaction *> transactionQueue;
     vector<Transaction *> WtransQueue;
-    vector <bool> slt_valid;
-    std::map< uint64_t,TRANS_MSG > pending_TransactionQue;
+    vector<bool> slt_valid;
+    std:: map<uint64_t, TRANS_MSG> pending_TransactionQue;
     BusPacket command;
-    unsigned  command_pend;
-    
-    //even/odd cycle flag
+    unsigned command_pend;
+
+    // even/odd cycle flag
     bool even_cycle;
     bool odd_cycle;
 
-    //statistics for DMC
+    // statistics for DMC
     unsigned totalTransactions;
     unsigned RtCmdCnt;
     unsigned totalReads;
@@ -232,18 +268,18 @@ public:
     unsigned baconf_cnt;
     unsigned totalconf_cnt;
     unsigned active_cnt;
-    unsigned active_dst_cnt;
+    unsigned active_dst_cnt=0;
     unsigned bypass_active_cnt;
     unsigned precharge_sb_cnt;
     unsigned precharge_pb_cnt;
     unsigned precharge_ab_cnt;
-    unsigned precharge_pb_dst_cnt;
+    unsigned precharge_pb_dst_cnt=0;
     unsigned read_p_cnt;
     unsigned write_p_cnt;
     unsigned read_cnt;
     unsigned write_cnt;
-    unsigned ecc_read_cnt;
-    unsigned ecc_write_cnt;
+    unsigned ecc_read_cnt=0;
+    unsigned ecc_write_cnt=0;
     unsigned merge_read_cnt;
     unsigned mwrite_cnt;
     unsigned mwrite_p_cnt;
@@ -260,7 +296,7 @@ public:
     uint32_t dmc_timeout_cnt;
     uint32_t dmc_fast_timeout_cnt;
     uint32_t dmc_slow_timeout_cnt;
-    //uint32_t timeout_cnt;
+    // uint32_t timeout_cnt;
     unsigned com_read_cnt;
     unsigned rw_switch_cnt;
     unsigned r2w_switch_cnt;
@@ -331,8 +367,7 @@ public:
     vector<vector<unsigned>> Rcmd_Dist;
     vector<vector<unsigned>> Wcmd_Dist;
 
-//    vector<vector<unsigned>> trans_baintlv;
-    
+    //    vector<vector<unsigned>> trans_baintlv;
 
     vector<unsigned> qos_delay_cnt;
     vector<unsigned> qos_cnt;
@@ -345,23 +380,23 @@ public:
     vector<unsigned> pf_delay_cnt;
     vector<unsigned> pf_cnt;
 
-    //grt fifo realted
+    // grt fifo realted
     unsigned grt_fifo_wcmd_cnt;
     bool grt_fifo_bp;
-    
-    //PTC constraint check
+
+    // PTC constraint check
     void ptc_constraint_check();
 
-    //seperate lc for col/row op
+    // seperate lc for col/row op
     void Col_Row_lc(vector<unsigned> &arb_group_pri, unsigned arb_type);
-    //Round Robin Priority for arb groups for col/row op
+    // Round Robin Priority for arb groups for col/row op
     void update_arb_group_pri(Cmd *c, vector<unsigned> &arb_group_pri, unsigned arb_type);
     vector<unsigned> arb_group_pri_col;
     vector<unsigned> arb_group_pri_row;
     // number of tran for arb groups
     vector<unsigned> arb_group_cnt;
 
-    //interface for perf queue
+    // interface for perf queue
     unsigned getPtcQueSize(bool isRd);
     BankTableState get_bank_state(unsigned bankIndex);
     unsigned get_rank_cnt(unsigned rank, bool isRd);
@@ -371,12 +406,22 @@ public:
     bool get_refresh_state(unsigned bankIndex);
     unsigned get_perf_timeout_rank_cnt(unsigned rank);
 
-//    bool force_rank_switch;
+    //    bool force_rank_switch;
     unsigned PreCmdTime;
     bool has_other_rank_cmd;
     bool has_hqos_rank_rcmd;
     unsigned hqos_rank;
     bool all_rank_has_cmd;
+
+    std:: unordered_map<uint64_t, uint64_t> ooo_queue;
+
+    uint64_t arrival_counter    = 0;
+    uint64_t completion_counter = 0;
+
+    uint64_t total_depth = 0;
+    uint64_t max_depth   = 0;
+    uint64_t count       = 0;
+    void ooo_statis(uint64_t id);
 
     uint64_t flowStatisTotalBytes;
 
@@ -407,34 +452,40 @@ public:
     unsigned total_fastrd_cancel_cnt;
     unsigned total_iecc_cnt;
     unsigned total_noiecc_cnt;
-    std::vector<std::vector<BankState>> banktable;
-    bool full() {return ((que_read_cnt + que_write_cnt) >= TRANS_QUEUE_DEPTH);};
+    std:: vector<std:: vector<BankState>> banktable;
+    bool full()
+    {
+        return ((que_read_cnt + que_write_cnt) >= TRANS_QUEUE_DEPTH);
+    };
     void dfs_backpress(bool backpress);
     bool dfs_backpress_en;
     uint64_t total_dfs_bp_cnt;
-    unsigned GetDmcQsize() {return (que_read_cnt + que_write_cnt);}
-    std::vector<vector<FORALLREFRESH>> refreshALL;
-    std::vector<PERBANKREFRESH> refreshPerBank;
-    vector <BankTableState> bankStates;
-    vector <RankStatus> RankState;
-    vector<data_packet>read_data_buffer;
+    unsigned GetDmcQsize()
+    {
+        return (que_read_cnt + que_write_cnt);
+    }
+    std:: vector<vector<FORALLREFRESH>> refreshALL;
+    std:: vector<PERBANKREFRESH> refreshPerBank;
+    vector<BankTableState> bankStates;
+    vector<RankStatus> RankState;
+    vector<data_packet> read_data_buffer;
     PhyLpStatus PhyLpState;
-    vector <bool> fast_wakeup;
-    vector <int> fast_wakeup_cnt;
-    vector <FuncState> funcState;
-    vector <uint32_t> PdTime;
-    vector <uint32_t> AsrefTime;
-    vector <uint32_t> SrpdTime;
-    vector <uint32_t> WakeUpTime;
-    vector <uint32_t> PdEnterCnt;
-    vector <uint32_t> PdExitCnt;
-    vector <uint32_t> AsrefEnterCnt;
-    vector <uint32_t> AsrefExitCnt;
-    vector <uint32_t> SrpdEnterCnt;
-    vector <uint32_t> SrpdExitCnt;
-    map <unsigned, unsigned> RdCntBl;
-    map <unsigned, unsigned> WrCntBl;
-    vector <wdata_pipe> WdataPipe;
+    vector<bool> fast_wakeup;
+    vector<int> fast_wakeup_cnt;
+    vector<FuncState> funcState;
+    vector<uint32_t> PdTime;
+    vector<uint32_t> AsrefTime;
+    vector<uint32_t> SrpdTime;
+    vector<uint32_t> WakeUpTime;
+    vector<uint32_t> PdEnterCnt;
+    vector<uint32_t> PdExitCnt;
+    vector<uint32_t> AsrefEnterCnt;
+    vector<uint32_t> AsrefExitCnt;
+    vector<uint32_t> SrpdEnterCnt;
+    vector<uint32_t> SrpdExitCnt;
+    map<unsigned, unsigned> RdCntBl;
+    map<unsigned, unsigned> WrCntBl;
+    vector<wdata_pipe> WdataPipe;
     uint64_t rd_inc_cnt;
     uint64_t bs_max;
     uint64_t bs_cnt;
@@ -446,24 +497,24 @@ public:
     uint64_t wdata_cnt;
     unsigned phy_lp_cnt;
     unsigned phy_notlp_cnt;
-    vector <uint8_t> rw_group_state;
+    vector<uint8_t> rw_group_state;
     bool in_write_group;
     uint8_t rk_grp_state;
     uint8_t real_rk_grp_state;
-    map <unsigned, unsigned> BL_n;
-    map <unsigned, unsigned> BL_n_min;
-    map <unsigned, unsigned> BL_n_max;
+    map<unsigned, unsigned> BL_n;
+    map<unsigned, unsigned> BL_n_min;
+    map<unsigned, unsigned> BL_n_max;
     uint64_t cmd_in2dfi_lat;
     uint64_t cmd_in2dfi_cnt;
     uint64_t cmd_rdmet_cnt;
     unsigned forward_64B_cnt;
     unsigned forward_128B_cnt;
     // MPTC *parentMPTC;
-    vector <uint64_t> bp_cycle;
-    vector <uint32_t> bp_step;
+    vector<uint64_t> bp_cycle;
+    vector<uint32_t> bp_step;
     bool has_cmd_bp();
     bool has_bypact_exec;
-    vector <bool> act_executing;
+    vector<bool> act_executing;
     vector<unsigned> pre_enh_pbr_bagroup;
     vector<unsigned> pre_sch_bankIndex;
     vector<bool> issue_state;
@@ -473,59 +524,60 @@ public:
     unsigned perf_grpst_switch_cnt;
     WB_State perf_state_pre;
 
-    //dummy timeout/hqos cnt
+    // dummy timeout/hqos cnt
     unsigned dummy_timeout_cnt;
     unsigned dummy_hqos_cnt;
 
-    //long-short-long
+    // long-short-long
     unsigned rw_idle_cnt;
 
-private:
+private: 
     unsigned id_;
-    PFQ* pfq_;
-    std::vector<Rank*> linked_ranks_;
-    MemorySystemTop* memorySystemTop_;
+    PFQ *pfq_;
+    std:: vector<Rank *> linked_ranks_;
+    MemorySystemTop *memorySystemTop_;
 
     ofstream &DDRSim_log;
     ofstream &trace_log;
     ofstream &cmdnum_log;
     ofstream check_log;
     uint32_t channel;
+    uint32_t ch;
     uint32_t sub_cha;
     uint64_t channel_ohot;
-    deque <Cmd *> rw_delay_buf;
-    deque <Transaction *> ent_delay_buf;
-    vector <Cmd *> CmdQueue;
-    vector <Cmd *> rw_cmdqueue;
-    vector <Cmd *> act_cmdqueue;
-    vector <Cmd *> pre_cmdqueue;
+    deque<Cmd *> rw_delay_buf;
+    deque<Transaction *> ent_delay_buf;
+    vector<Cmd *> CmdQueue;
+    vector<Cmd *> rw_cmdqueue;
+    vector<Cmd *> act_cmdqueue;
+    vector<Cmd *> pre_cmdqueue;
     vector<DataPacket> writeDataToSend;
     uint32_t data_delay;
-    vector< vector<unsigned> > tFAWCountdown;
-    vector< vector<unsigned> > tFAWCountdown_sc1;
-    vector< vector<unsigned> > tFPWCountdown;
+    vector<vector<unsigned>> tFAWCountdown;
+    vector<vector<unsigned>> tFAWCountdown_sc1;
+    vector<vector<unsigned>> tFPWCountdown;
     unsigned cmdCyclesLeft;
     // vector<Rank *> *ranks;
     bool refreshing;
     bool exec_valid;
-    vector <vector<bool>> refresh_pbr_has_finish;
-    vector <vector<bool>> force_pbr_refresh;
-    vector<phy>packet;
+    vector<vector<bool>> refresh_pbr_has_finish;
+    vector<vector<bool>> force_pbr_refresh;
+    vector<phy> packet;
     uint64_t pre_dat_time;
-    //for adapt page policy
+    // for adapt page policy
     bool arb_enable;
-    vector <std::vector<pbr_weight>> PbrWeight;
-    vector <std::vector<pbr_weight>> SbGroupWeight;       // used for different groups, in which banks have same ba1ba0
-    vector <std::vector<pbr_weight>> SbWeight;            // used for banks with same ba1ba0
-    vector <std::vector<unsigned>>   bank_pair_cmd_cnt;   // added for SBR_WEIGHT_ENH_MODE=3/4
-//    vector <pbr_weight> SbWeightOrder;
+    vector<std:: vector<pbr_weight>> PbrWeight;
+    vector<std:: vector<pbr_weight>> SbGroupWeight;    // used for different groups, in which banks have same ba1ba0
+    vector<std:: vector<pbr_weight>> SbWeight;         // used for banks with same ba1ba0
+    vector<std:: vector<unsigned>> bank_pair_cmd_cnt;  // added for SBR_WEIGHT_ENH_MODE=3/4
+                                                      //    vector <pbr_weight> SbWeightOrder;
     uint8_t serial_cmd_cnt;
     uint8_t rwgrp_ch_cmd_cnt;
     uint8_t rankgrp_ch_cmd_cnt;
-    vector <uint64_t> WriteResp;
-    vector <uint64_t> ReadResp;
-    vector <uint64_t> CmdResp;
-//    vector<data_packet>read_data_buffer;
+    vector<uint64_t> WriteResp;
+    vector<uint64_t> ReadResp;
+    vector<uint64_t> CmdResp;
+    //    vector<data_packet>read_data_buffer;
     TransactionCmd activate_cmd;
     bool core_concurr_en;
     uint8_t cmd_cycle;
@@ -533,46 +585,46 @@ private:
     uint8_t rw_cycle;
     int CalcCmdCycle(uint8_t pre_cmd, uint8_t next_cmd);
     unsigned lru_arb(uint64_t index1, uint64_t index2, uint64_t sel);
-    void update_lru (uint64_t index, uint64_t sel, Cmd *cmd);
+    void update_lru(uint64_t index, uint64_t sel, Cmd *cmd);
     void LoadTfpw(uint8_t rank, unsigned tfpw);
     void LoadTfaw(uint8_t rank, unsigned tfaw, unsigned sc);
     void CheckFgRef(Cmd *c, unsigned bank, unsigned matgrp);
 
-public:
+public: 
     Cmd pre_rwcmd;
     Cmd *pregrt_cmd = NULL;
     Cmd prerw;
-    uint64_t pre_req_time;          // time point for last cmd
-    uint64_t pre_req_data_time;    // time point for last wdata 
+    uint64_t pre_req_time;       // time point for last cmd
+    uint64_t pre_req_data_time;  // time point for last wdata
     uint64_t rd_met_abr_cnt;
     uint64_t rd_met_pbr_cnt;
     unsigned pbr_bank_num;
     unsigned pbr_bg_num;
-    unsigned pbr_sb_group_num;      //added for enhanced dbr
-    unsigned pbr_sb_num;            //added for enhanced dbr
+    unsigned pbr_sb_group_num;  // added for enhanced dbr
+    unsigned pbr_sb_num;        // added for enhanced dbr
     unsigned sc_num;
     unsigned sc_bank_num;
 
-    //V750
+    // V750
     unsigned arb_per_group;
-    
-    uint64_t pbr_block_allcmd_cycle;        // added for statistics of influence of enhanced dbr
-    uint64_t pbr_cycle;                     // added for statistics of influence of enhanced dbr
-    
+
+    uint64_t pbr_block_allcmd_cycle;  // added for statistics of influence of enhanced dbr
+    uint64_t pbr_cycle;               // added for statistics of influence of enhanced dbr
+
     uint64_t pre_cmd_time;
 
     map<uint64_t, bool> rmw_rd_finish;
-    std::map< uint64_t, task_info > tasks_info;
-    std::map< uint64_t, uint32_t > wdata_info;
+    std:: map<uint64_t, task_info> tasks_info;
+    std:: map<uint64_t, uint32_t> wdata_info;
     void pushQosForSameMpamTrans(Transaction *trans);
     void pushQosForSameMidTrans(Transaction *trans);
     string log_path;
     void gen_rdata(uint64_t task, unsigned cnt, unsigned delay, bool mask_wcmd);
     void push_pending_TransactionQue(Transaction *trans);
-    void rank_group_weight(unsigned * rank, unsigned * type);
+    void rank_group_weight(unsigned *rank, unsigned *type);
     unsigned max_bl_data_size;
     unsigned min_bl_data_size;
-    map <unsigned, unsigned> bl_data_size;
+    map<unsigned, unsigned> bl_data_size;
     vector<unsigned> rowconf_pre_cnt;
     vector<unsigned> pageto_pre_cnt;
     vector<unsigned> func_pre_cnt;
@@ -587,26 +639,29 @@ public:
     unsigned rw_cmd_num;
     unsigned act_cmd_num;
     unsigned tout_high_pri;
-    unsigned GetRwRank(unsigned rank) {return (r_rank_cnt[rank] + w_rank_cnt[rank]);};
-    vector <bool> has_wakeup;
-    vector <bool> rank_has_cmd;
-    vector <uint64_t> bank_idle_cnt;
-    vector <uint64_t> bank_act_cnt;
+    unsigned GetRwRank(unsigned rank)
+    {
+        return (r_rank_cnt[rank] + w_rank_cnt[rank]);
+    };
+    vector<bool> has_wakeup;
+    vector<bool> rank_has_cmd;
+    vector<uint64_t> bank_idle_cnt;
+    vector<uint64_t> bank_act_cnt;
     uint64_t rd_met_pd_cnt;
     uint64_t rd_met_asref_cnt;
     uint64_t cmd_met_pd_cnt;
     uint64_t cmd_met_asref_cnt;
-    vector <uint32_t> rank_cnt_asref;
-//    vector <uint32_t> rank_cnt_sbridle;
-//    vector <bool> rank_send_pbr;
-    vector < vector<uint32_t> > rank_cnt_sbridle;
-    vector < vector<bool> > rank_send_pbr;
+    vector<uint32_t> rank_cnt_asref;
+    //    vector <uint32_t> rank_cnt_sbridle;
+    //    vector <bool> rank_send_pbr;
+    vector<vector<uint32_t>> rank_cnt_sbridle;
+    vector<vector<bool>> rank_send_pbr;
     uint32_t page_act_cnt;
     uint32_t page_rw_cnt;
     unsigned samerow_mask_rdcnt;
     unsigned samerow_mask_wrcnt;
-    vector <unsigned> samerow_bit_rdcnt;
-    vector <unsigned> samerow_bit_wrcnt;
+    vector<unsigned> samerow_bit_rdcnt;
+    vector<unsigned> samerow_bit_wrcnt;
     uint64_t pbr_cc_cnt;
     uint64_t abr_cc_cnt;
     bool sch_tout_cmd;
@@ -616,16 +671,16 @@ public:
     unsigned trfcab;
     unsigned no_sch_cmd_en;
     unsigned no_sch_cmd_cnt;
-    vector <bool> send_wckfs; // for CAS_FS
-    unsigned PCFG_RANKTRTR_CASFS; // for CAS_FS
-    unsigned PCFG_RANKTRTW_CASFS; // for CAS_FS
-    unsigned PCFG_RANKTWTR_CASFS; // for CAS_FS
-    unsigned PCFG_RANKTWTW_CASFS; // for CAS_FS
-    unsigned casfs_cnt = 0; // for CAS_FS
-    uint64_t casfs_time = 0; // for CAS_FS
-    unsigned casfs_pre_rank = 0; // for CAS_FS
-    vector <bool> pbr_hold_pre;
-    vector <uint64_t> pbr_hold_pre_time;
+    vector<bool> send_wckfs;       // for CAS_FS
+    unsigned PCFG_RANKTRTR_CASFS;  // for CAS_FS
+    unsigned PCFG_RANKTRTW_CASFS;  // for CAS_FS
+    unsigned PCFG_RANKTWTR_CASFS;  // for CAS_FS
+    unsigned PCFG_RANKTWTW_CASFS;  // for CAS_FS
+    unsigned casfs_cnt      = 0;  // for CAS_FS
+    uint64_t casfs_time     = 0;  // for CAS_FS
+    unsigned casfs_pre_rank = 0;  // for CAS_FS
+    vector<bool> pbr_hold_pre;
+    vector<uint64_t> pbr_hold_pre_time;
     unsigned rw_exec_cnt;
     unsigned table_use_cnt;
 
@@ -640,16 +695,13 @@ public:
     vector<uint32_t> highqos_r_bank_cnt;
     unsigned highqos_max_delay;
     unsigned highqos_max_delay_id;
-    vector <uint32_t> que_read_highqos_cnt;
+    vector<uint32_t> que_read_highqos_cnt;
     unsigned highqos_trig_grpsw_cnt;
-    vector <uint64_t> sbr_gap_cnt;
-    vector <unsigned> ref_offset;
-    vector <unsigned> grp_sid_level;
-    vector <unsigned> max_rcmd_bank;
-    vector <unsigned> max_wcmd_bank;
-
-    bool dropPreAct(Transaction *trans);
-    map <uint64_t, bool> rdata_toggle_map;  // 用于merge rdata
+    vector<uint64_t> sbr_gap_cnt;
+    vector<unsigned> ref_offset;
+    vector<unsigned> grp_sid_level;
+    vector<unsigned> max_rcmd_bank;
+    vector<unsigned> max_wcmd_bank;
 };
-}
-#endif 
+}  // namespace DRAMSim
+#endif
