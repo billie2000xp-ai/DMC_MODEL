@@ -1,38 +1,73 @@
+/*
+ * Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+ * Description: IniReader.h
+ * Author: l00434636
+ * Create: 2020-10-27
+ */
+
 #ifndef INIREADER_H
 #define INIREADER_H
 
+#include <cstddef>
 #include <iostream>
 #include <fstream>
+#include <iterator>
 #include <sstream>
 #include <string>
 #include <map>
+#include <vector>
 #include "SystemConfiguration.h"
 #include "ddr_common.h"
 #include "config.h"
 
 using namespace std;
 
-#define DEFINE_UINT_PARAM(name, paramtype) {#name, &name, UINT, paramtype, false}
-#define DEFINE_STRING_PARAM(name, paramtype) {#name, &name, STRING, paramtype, false}
-#define DEFINE_FLOAT_PARAM(name,paramtype) {#name, &name, FLOAT, paramtype, false}
-#define DEFINE_BOOL_PARAM(name, paramtype) {#name, &name, BOOL, paramtype, false}
-#define DEFINE_UINT64_PARAM(name, paramtype) {#name, &name, UINT64, paramtype, false}
-#define DEFINE_UINT64HEX_PARAM(name, paramtype) {#name, &name, UINT64HEX, paramtype, false}
-#define DEFINE_UINTARRAY_PARAM(name, paramtype) {#name, &name, UINTARRAY, paramtype, false}
-#define DEFINE_FLOATARRAY_PARAM(name, paramtype) {#name, &name, FLOATARRAY, paramtype, false}
+#define DEFINE_UINT_PARAM(name, paramtype)   \
+    {                                        \
+        #name, &name, UINT, paramtype, false \
+    }
+#define DEFINE_STRING_PARAM(name, paramtype)   \
+    {                                          \
+        #name, &name, STRING, paramtype, false \
+    }
+#define DEFINE_FLOAT_PARAM(name, paramtype)   \
+    {                                         \
+        #name, &name, FLOAT, paramtype, false \
+    }
+#define DEFINE_BOOL_PARAM(name, paramtype)   \
+    {                                        \
+        #name, &name, BOOL, paramtype, false \
+    }
+#define DEFINE_UINT64_PARAM(name, paramtype)   \
+    {                                          \
+        #name, &name, UINT64, paramtype, false \
+    }
+#define DEFINE_UINT64HEX_PARAM(name, paramtype)   \
+    {                                             \
+        #name, &name, UINT64HEX, paramtype, false \
+    }
+#define DEFINE_UINTARRAY_PARAM(name, paramtype)   \
+    {                                             \
+        #name, &name, UINTARRAY, paramtype, false \
+    }
+#define DEFINE_FLOATARRAY_PARAM(name, paramtype)   \
+    {                                              \
+        #name, &name, FLOATARRAY, paramtype, false \
+    }
 
 namespace DRAMSim {
 
-typedef enum _variableType {STRING, UINT, UINT64, FLOAT, BOOL, UINT64HEX, UINTARRAY, FLOATARRAY} varType;
-typedef enum _paramType {SYS_PARAM, DEV_PARAM} paramType;
+typedef enum _variableType { STRING, UINT, UINT64, FLOAT, BOOL, UINT64HEX, UINTARRAY, FLOATARRAY } varType;
+typedef enum _paramType { SYS_PARAM, DEV_PARAM } paramType;
 typedef struct _configMap {
-    string iniKey; //for example "tRCD"
+    string iniKey;  // for example "tRCD"
 
     void *variablePtr;
     varType variableType;
     paramType parameterType;
     bool wasSet;
 } ConfigMap;
+
 
 class IniReader {
 
@@ -44,7 +79,7 @@ public:
     static void OverrideKeys(const OverrideMap *map);
     static void ReadIniFile(istream &iniFile, bool isSystemParam);
 #ifdef SYSARCH_PLATFORM
-    static void ModifyParameter(HALib::Configurable* cfg);
+    static void ModifyParameter(HALib::Configurable *cfg);
 #else
     static void ModifyParameter(Configurable cfg);
 #endif
@@ -57,17 +92,17 @@ public:
     static int getUint64(const std::string &field, uint64_t *val);
     static int getUint64Hex(const std::string &field, uint64_t *val);
     static int getFloat(const std::string &field, float *val);
+    static map<string, string> getCollect() {return cfg_collector;}
+    static const ConfigMap* getConfigMap();
+    static size_t getConfigMapSize();
 
 private:
+    inline static map<string, string> cfg_collector;
     static void WriteParams(std::ofstream &visDataOut, paramType t);
     static void Trim(string &str);
 };
 
-enum b_type {
-    START,
-    END,
-    DAT
-};
+enum b_type { START, END, DAT };
 
 struct line_message {
     std::string operation;
@@ -78,7 +113,8 @@ struct line_message {
     b_type issue;
     uint64_t task;
 
-    line_message() {
+    line_message()
+    {
         operation = "Read";
         address_h = 0;
         address_l = 0;
@@ -92,16 +128,18 @@ struct line_message {
 class getfile {
 
     line_message nullstr;
+
 public:
-    std::map<unsigned long,line_message> start_valmap;
+    std::map<unsigned long, line_message> start_valmap;
     std::map<unsigned long, line_message> end_valmap;
     std::map<unsigned long, line_message> data_valmap;
     getfile(string filename);
 
-    getfile() {
-    }
+    getfile()
+    {}
 
-    line_message & get(unsigned long key, b_type type) {
+    line_message &get(unsigned long key, b_type type)
+    {
         if (type == START) {
             auto it = start_valmap.find(key);
             if (it == start_valmap.end())
@@ -121,10 +159,10 @@ public:
             else
                 return it->second;
         }
-
     }
 
-    bool has(unsigned long key,b_type type) {
+    bool has(unsigned long key, b_type type)
+    {
         if (type == START) {
             return (start_valmap.find(key) != start_valmap.end());
         } else if (type == END) {
@@ -134,7 +172,7 @@ public:
         }
     }
 
-    friend ostream &operator<<(ostream &os ,const line_message &t);
+    friend ostream &operator<<(ostream &os, const line_message &t);
 };
-}
+}  // namespace DRAMSim
 #endif
