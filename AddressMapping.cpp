@@ -99,6 +99,23 @@ void addressMapping(Transaction &trans) {
     sid1      = bit_xor(MATRIX_SID1, trans.address);
     sid0      = bit_xor(MATRIX_SID0, trans.address);
     trans.sid = sid0 | (sid1<<1) | (sid2<<2);
+    bitset<32> sid_addr(trans.sid);
+
+    if (IS_HBM3 && trans.sid == 3) {
+        if (row_addr[ROW_SEL_MSB] == 1 && row_addr[ROW_SEL_SMSB] == 1) {
+            ERROR("forbidden address, task="<<trans.task<<", address="<<hex<<trans.address<<", row="<<trans.row)
+            assert(0);
+        }
+        trans.sid = row_addr[ROW_SEL_MSB] << 1 | row_addr[ROW_SEL_SMSB];
+        row_addr[ROW_SEL_MSB] = sid_addr[1];
+        row_addr[ROW_SEL_SMSB] = sid_addr[0];
+        trans.row = row_addr.to_ulong();
+    }
+
+    if (IS_HBM3 && trans.sid == 3) {
+        ERROR("forbidden sid address, task="<<trans.task<<", address="<<hex<<trans.address<<", row="<<trans.row<<", sid="<<trans.sid);
+        assert(0);
+    }
 
     bg0         = bit_xor(MATRIX_BG0, trans.address);
     bg1         = bit_xor(MATRIX_BG1, trans.address);
@@ -135,8 +152,47 @@ void addressMapping(Transaction &trans) {
         trans.addr_col = trans.col * JEDEC_DATA_BUS_BITS / 8;
     }
 
+    if (IS_HBM3 && ADDR_EXP_EN && !ZHUQUE_ENABLE) {
+        unsigned row_msb = row_addr[ROW_SEL_MSB];
+        unsigned row_smsb = row_addr[ROW_SEL_SMSB];
+        row_addr[ROW_SEL_MSB] = (((4 * trans.sid + (row_msb << 1) + row_smsb) % 3) >> 1);
+        row_addr[ROW_SEL_SMSB] = (((4 * trans.sid + (row_msb << 1) + row_smsb) % 3) % 2);
+        trans.sid = ((4 * trans.sid + (row_msb << 1) + row_smsb) / 3);
+        trans.row = row_addr.to_ulong();
+        if ((row_addr[ROW_SEL_MSB] == 1) && (row_addr[ROW_SEL_SMSB] == 1)) {
+            ERROR("forbidden row address, task="<<trans.task<<", address="<<hex<<trans.address<<", row="<<trans.row<<", sid="<<trans.sid);
+            assert(0);
+        }
+    } else if (IS_HBM3 && ZHUQUE_ENABLE && ZHUQUE_BA_MODE == 48 && bg2 == 1 && bg3 == 1) {
+            bg2 = row12;
+            bg3 = row13;
+            row12 = 1;
+            row13 = 1;
+            trans.row = row0 | (row1<<1) | (row2<<2) | (row3<<3) | (row4<<4) | (row5<<5) | (row6<<6) | (row7<<7) |
+                    (row8<<8) | (row9<<9) | (row10<<10) | (row11<<11) | (row12<<12) | (row13<<13) | (row14<<14) |
+                    (row15<<15) | (row16<<16) | (row17<<17) | (row18<<18) | (row19<<19) | (row20<<20) |
+                    (row21<<21) | (row22<<22) | (row23<<23);
+            trans.group = bg0 | (bg1<<1) | (bg2<<2) | (bg3<<3) | (bg4<<4);
+    }
+
+    if (IS_HBM3 && SID_SCRAMBLE_EN && NUM_SIDS == 3) {
+        unsigned hash_val = 0;
+        if (SID_SCRAMBLE_MODE == 0) {
+            hash_val = (trans.col ^ (trans.col >> 2) ^ trans.bank ^ (trans.group << 1) ^ (trans.row & 0x3)) % 3;
+        } else if (SID_SCRAMBLE_MODE == 1) {
+            hash_val = ((trans.address >> 9) ^ (trans.address >> 11) ^ (trans.address >> 13) ^ trans.bank ^ trans.group) % 3;
+        } else {
+            hash_val = ((trans.col >> 1) + trans.bank + (trans.group << 1) + (trans.row & 0x7)) % 3;
+        }
+        trans.sid = (trans.sid + hash_val) % 3;
+    }
+
     trans.bankIndex = trans.bank + trans.group * (NUM_BANKS / NUM_SIDS / NUM_GROUPS) +
             trans.rank * NUM_BANKS + trans.sid * (NUM_BANKS / NUM_SIDS);
+    if (trans.bankIndex >= NUM_RANKS * NUM_BANKS) {
+        ERROR("bank index overflow, task="<<trans.task<<", bankIndex="<<trans.bankIndex<<", numBanks="<<NUM_BANKS);
+        assert(0);
+    }
 }
 
 uint8_t bit_xor(uint64_t matrix, uint64_t address) {
@@ -180,6 +236,10 @@ void CalcMatrixNum() {
     if (MATRIX_BG1 != 0x0 ) num ++;
     if (MATRIX_BG0 != 0x0 ) num ++;
     NUM_GROUPS = pow(2, num);
+    if (IS_HBM3 && ZHUQUE_ENABLE && ZHUQUE_BA_MODE == 48) {
+        assert(NUM_GROUPS == 16);
+        NUM_GROUPS = 12;
+    }
 
     num = 0;
     if (MATRIX_BA6 != 0x0 ) num ++;
