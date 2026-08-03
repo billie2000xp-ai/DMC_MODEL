@@ -664,6 +664,7 @@ public:
     vector<unsigned> samerow_bit_wrcnt;
     uint64_t pbr_cc_cnt;
     uint64_t abr_cc_cnt;
+    bool dropPreAct(Transaction *trans);
     bool sch_tout_cmd;
     TransactionType sch_tout_type;
     unsigned sch_tout_rank;
