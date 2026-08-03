@@ -141,6 +141,8 @@ struct arb_cmd {
     unsigned bank;
     unsigned group;
     unsigned bankIndex;
+    unsigned channel;
+    unsigned sid;
     unsigned pri;
     unsigned qos;
 
@@ -154,6 +156,8 @@ struct arb_cmd {
         bank      = 0;
         group     = 0;
         bankIndex = 0;
+        channel   = 0;
+        sid       = 0;
         pri       = 0;
         qos       = 0;
     }
@@ -168,6 +172,8 @@ struct arb_cmd {
         bank      = t->bank;
         group     = t->group;
         bankIndex = t->bankIndex;
+        channel   = t->channel;
+        sid       = t->sid;
         pri       = t->pri;
         qos       = t->qos;
     }
@@ -455,18 +461,17 @@ public:
     void gen_rresp(uint64_t task, uint32_t channel);
     bool ArbCmd_notempty();
 
-    //for sid group
-    // bool sidGroupPass(Transaction* trans);
-    // void update_sidgroup_state(unsigned rank);
-    // unsigned get_max_sid(unsigned rank);
-    // vector <unsigned> sid_group_state;
-    // vector <unsigned> quc_slt_grp_lr; //sid group state, delay array
-    // vector <unsigned> pre_quc_slt_grp_lr;
-    // vector <unsigned> serial_sid_cnt;
-    // vector <unsigned> sidgrp_ch_cmd_cnt;
-    // unsigned in_sid_group; // cur sid grp, 0-3 is illegal val, 4 means not real in sid group
-    // vector<vector<unsigned>> sid_timeout;
-    // vector<vector<bool>> sid_issue_state;
+    bool sidGroupPass(Transaction *trans) const;
+    bool preferSameSidRead(Transaction *candidate, Transaction *current) const;
+    bool preferSameSidRead(arb_cmd *candidate, arb_cmd *current) const;
+    bool limitSameSidRead(Transaction *candidate, Transaction *current) const;
+    bool limitSameSidRead(arb_cmd *candidate, arb_cmd *current) const;
+    void updateSidGroupState();
+    std:: vector<unsigned> sid_group_target;
+    std:: vector<unsigned> sid_group_next_target;
+    std:: vector<unsigned> sid_group_switch_count;
+    std:: vector<unsigned> sid_group_serial_count;
+    std:: vector<std:: vector<unsigned>> sid_group_timeout;
     
 private: 
     // ============ PRIVATE MEMBER VARIABLES ============
