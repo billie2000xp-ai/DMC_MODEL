@@ -1,3 +1,10 @@
+/*
+* Copyright @ Huawei Technologies Co., Ltd. 2019-2029. All rights reserved.
+* Description: BankState.h
+* Author     : l00434636
+* Create     : 2020-10-27
+*/
+
 #ifndef LP_BANKSTATE_H
 #define LP_BANKSTATE_H
 
@@ -20,7 +27,7 @@ enum CurrentBankState {
 
 class BankState {
     ostream &DDRSim_log;
-public:
+public: 
     //Fields
     CurrentBankState currentBankState;
     unsigned openRowAddress;
@@ -47,8 +54,6 @@ public:
     unsigned lastCmdSource;
     unsigned lastPrechargeSource; // set true if page timeout and ap command
     unsigned lastMatgrp;
-    uint64_t trfcpb_met_time;
-    uint64_t trc_met_time;
     //Functions
     BankState(ostream &DDRSim_log_);
     void print();
