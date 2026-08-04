@@ -1788,6 +1788,7 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id)
 {
     if (EM_ENABLE && EM_MODE == 0)
         channel = 0;
+    bool first_upstream_beat = !IS_HBM3 || ((upstream_wdata_cnt[id] & 1) == 0);
     if (WRITE_BUFFER_ENABLE && ((mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->perf_pre_data_time ==
                                     mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->now()) ||
                                    (mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->m_pre_data_time ==
@@ -1799,14 +1800,23 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id)
                          << ", perf_pre_wdata_time="
                          << mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->perf_pre_data_time << endl);
         }
-        return false;
+        if (!IS_HBM3 || first_upstream_beat)
+            return false;
     }
 
     if (DROP_WRITE_CMD || PERFECT_DMC_EN)
         return true;
 
+    if (IS_HBM3) {
+        upstream_wdata_cnt[id]++;
+        if ((upstream_wdata_cnt[id] & 1) != 0)
+            return true;
+    }
+
     auto it = write_map.find(id);
     if (it == write_map.end()) {
+        if (IS_HBM3)
+            upstream_wdata_cnt[id]--;
         if (DEBUG_BUS) {
             PRINTN_M(
                 channel, setw(10) << now() << " -- WDATA :: BP Wdata, Wcmd must be send first, task=" << id << endl);
@@ -1819,16 +1829,23 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id)
     }
 
     if (WRITE_BUFFER_ENABLE) {
-        mras_->getIECC(channel / (NUM_CHANS / NUM_PFQS))->addData(data, channel, id);
+        bool accepted = mras_->getIECC(channel / (NUM_CHANS / NUM_PFQS))->addData(data, channel, id);
+        if (!accepted) {
+            if (IS_HBM3)
+                upstream_wdata_cnt[id]--;
+            return false;
+        }
     }
 
-    if (it->second.num_256bit == 0) {
+    unsigned accepted_beats = IS_HBM3 ? 2 : 1;
+    if (it->second.num_256bit < accepted_beats) {
         ERROR(setw(10) << now() << " -- ERROR, burst number mismatch, ID=" << id << ", chnl: " << channel);
     } else {
-        it->second.num_256bit--;
+        it->second.num_256bit -= accepted_beats;
     }
     if (it->second.num_256bit == 0) {
         write_map.erase(id);
+        upstream_wdata_cnt.erase(id);
     }
     return true;
 }
