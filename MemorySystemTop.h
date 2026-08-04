@@ -120,6 +120,7 @@ public:
     unsigned systemID;
 
     std:: map<uint64_t, write_msg> write_map;
+    std::map<uint64_t, unsigned> upstream_wdata_cnt;
     vector<vector<Transaction *>> PreDmcPipeQueue;
 
     string dmc_log;
