@@ -4369,33 +4369,15 @@ void PTC::scheduler()
             }
             c = rwc;
             if (rwc == NULL) {
-                for (auto &cmd : CmdQueue)
-                    delete cmd;
+                act_cmdqueue.clear();
+                rw_cmdqueue.clear();
+                pre_cmdqueue.clear();
                 CmdQueue.clear();
                 return;
             }
             update_lru(c->ptc_slot, 0, c);
             pregrt_cmd = c;
         } else {  // send act/pre/ref/pbr and so on
-            Cmd *actc = NULL;
-            for (auto &cmd : act_cmdqueue) {
-                if (cmd->issue_size != 0) {
-                    actc = cmd;
-                    break;
-                }
-                if (actc == NULL) {
-                    actc = cmd;
-                    continue;
-                }
-                if (priority_pri(cmd) > priority_pri(actc)) {
-                    actc = cmd;
-                } else if (priority_pri(cmd) == priority_pri(actc)) {
-                    if (lru_arb(cmd->ptc_slot, actc->ptc_slot, 0))
-                        actc = cmd;
-                }
-            }
-            if (actc != NULL)
-                CmdQueue.push_back(actc);
             Cmd *prec = NULL;
             for (auto &cmd : pre_cmdqueue) {
                 if (cmd->issue_size != 0) {
@@ -4416,10 +4398,8 @@ void PTC::scheduler()
             if (prec != NULL)
                 CmdQueue.push_back(prec);
             for (auto &cmd : CmdQueue) {
-                if (cmd->issue_size != 0) {
-                    c = cmd;
-                    break;
-                }
+                if (cmd->cmd_type >= WRITE_CMD && cmd->cmd_type <= READ_P_CMD)
+                    continue;
                 if (c == NULL) {
                     c = cmd;
                     continue;
