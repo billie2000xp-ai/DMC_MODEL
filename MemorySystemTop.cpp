@@ -23,10 +23,6 @@
 #include "PTC.h"
 #include "Rank.h"
 #include <algorithm>
-#include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/rotating_file_sink.h>
 
 using namespace DRAMSim;
 //==============================================================================
@@ -81,6 +77,10 @@ std:      : istringstream lpddr_sys_stream(lpddr_pub_str);
     PRINT_TIMEOUT      = cfg->getBool("PRINT_TIMEOUT");
     PERFECT_DMC_EN     = cfg->getBool("PERFECT_DMC_EN");
     PERFECT_DMC_DELAY  = cfg->getNumber("PERFECT_DMC_DELAY");
+    BYPASS_MODE        = cfg->getBool("BYPASS_MODE");
+    BYPASS_RDATA_DELAY = cfg->getNumber("BYPASS_RDATA_DELAY");
+    BYPASS_RRESP_DELAY = cfg->getNumber("BYPASS_RRESP_DELAY");
+    BYPASS_WRESP_DELAY = cfg->getNumber("BYPASS_WRESP_DELAY");
     DROP_WRITE_CMD     = cfg->getBool("DROP_WRITE_CMD");
     LAT_INC_BP         = cfg->getBool("LAT_INC_BP");
     FORCE_BAINTLV_EN   = cfg->getBool("FORCE_BAINTLV_EN");
@@ -315,6 +315,8 @@ std:      : istringstream lpddr_sys_stream(lpddr_sys_str);
                PERF_TIMEOUT_EN                = cfg->getBool("PERF_TIMEOUT_EN");
                PERF_TIMEOUT_MODE              = cfg->getNumber("PERF_TIMEOUT_MODE");
                TOUT_FORCE_RWGRP_EN            = cfg->getBool("TOUT_FORCE_RWGRP_EN");
+               PERF_TIMEOUT_KEEP_RWGRP_EN     = cfg->getBool("PERF_TIMEOUT_KEEP_RWGRP_EN");
+               PERF_TIMEOUT_ROWMISS_ONLY_EN   = cfg->getBool("PERF_TIMEOUT_ROWMISS_ONLY_EN");
                PERF_DUMMY_TOUT_EN             = cfg->getBool("PERF_DUMMY_TOUT_EN");
                EM_ENABLE                      = cfg->getBool("EM_ENABLE");
                EM_MODE                        = cfg->getNumber("EM_MODE");
@@ -497,6 +499,10 @@ std:      : istringstream drampower_stream(drampower_str);
     GET_PARAM(PRINT_TIMEOUT, "PRINT_TIMEOUT", getBool);
     GET_PARAM(PERFECT_DMC_EN, "PERFECT_DMC_EN", getBool);
     GET_PARAM(PERFECT_DMC_DELAY, "PERFECT_DMC_DELAY", getUint);
+    GET_PARAM(BYPASS_MODE, "BYPASS_MODE", getBool);
+    GET_PARAM(BYPASS_RDATA_DELAY, "BYPASS_RDATA_DELAY", getUint);
+    GET_PARAM(BYPASS_RRESP_DELAY, "BYPASS_RRESP_DELAY", getUint);
+    GET_PARAM(BYPASS_WRESP_DELAY, "BYPASS_WRESP_DELAY", getUint);
     GET_PARAM(DROP_WRITE_CMD, "DROP_WRITE_CMD", getBool);
     GET_PARAM(LAT_INC_BP, "LAT_INC_BP", getBool);
     GET_PARAM(FORCE_BAINTLV_EN, "FORCE_BAINTLV_EN", getBool);
@@ -747,6 +753,8 @@ std:      : istringstream drampower_stream(drampower_str);
     GET_PARAM(PERF_TIMEOUT_EN, "PERF_TIMEOUT_EN", getBool);
     GET_PARAM(PERF_TIMEOUT_MODE, "PERF_TIMEOUT_MODE", getUint);
     GET_PARAM(TOUT_FORCE_RWGRP_EN, "TOUT_FORCE_RWGRP_EN", getBool);
+    GET_PARAM(PERF_TIMEOUT_KEEP_RWGRP_EN, "PERF_TIMEOUT_KEEP_RWGRP_EN", getBool);
+    GET_PARAM(PERF_TIMEOUT_ROWMISS_ONLY_EN, "PERF_TIMEOUT_ROWMISS_ONLY_EN", getBool);
     GET_PARAM(PERF_DUMMY_TOUT_EN, "PERF_DUMMY_TOUT_EN", getBool);
     GET_PARAM(EM_ENABLE, "EM_ENABLE", getBool);
     GET_PARAM(EM_MODE, "EM_MODE", getUint);
@@ -1157,8 +1165,6 @@ std:      : istringstream drampower_stream(drampower_str);
         unsigned ch_idx = hhaId * NUM_CHANS + channel;
         InitOutputFiles(ch_idx);
     }
-    start_cycle.clear();
-    end_cycle.clear();
     write_map.clear();
 
     mptc_ = std::make_unique<MPTC>(this, DDRSim_ptc_log, trace_log, cmdnum_log, dram_log);
@@ -1374,6 +1380,7 @@ std:      : istringstream drampower_stream(drampower_str);
     for (size_t ch = 0; ch < NUM_CHANS; ch++) {
         PreDmcPipeQueue[ch].reserve(tPIPE_PRE_DMC);
     }
+    bypass_queue.reserve(80);
 
     pre_abr_cnt.clear();
     pre_abr_cnt.resize(NUM_CHANS, vector<vector<unsigned>>(NUM_RANKS, vector<unsigned>(mptc_->getPTC(0)->sc_num, 0)));
@@ -1533,6 +1540,10 @@ string MemorySystemTop::convertString(const char *fmt, ...)
 
 MemorySystemTop::~MemorySystemTop()
 {
+    for (auto &msg : bypass_queue) {
+        delete msg.trans;
+    }
+    bypass_queue.clear();
     if (DRAM_POWER_EN) {
         for (size_t ch = 0; ch < NUM_CHANS; ch++) {
             for (size_t i = 0; i < NUM_RANKS; i++) {
@@ -1637,7 +1648,40 @@ bool MemorySystemTop::addTransaction(const hha_command &command)
             }
         }
     }
+
+    if (BYPASS_MODE) {
+        if (bypass_queue.size() >= 80) {
+            delete trans;
+            bp_cnt[ch]++;
+            total_bp_cnt[ch]++;
+            task_cnt[ch]++;
+            total_task_cnt[ch]++;
+            return false;
+        }
+        for (auto &msg : bypass_queue) {
+            if (msg.trans != NULL && msg.trans->task == trans->task) {
+                delete trans;
+                bp_cnt[ch]++;
+                total_bp_cnt[ch]++;
+                task_cnt[ch]++;
+                total_task_cnt[ch]++;
+                return false;
+            }
+        }
+        bypass_message msg;
+        msg.trans = trans;
+        msg.rdata_time = now() + BYPASS_RDATA_DELAY;
+        msg.rresp_time = now() + BYPASS_RRESP_DELAY;
+        msg.wresp_time = now() + BYPASS_WRESP_DELAY;
+        bypass_queue.push_back(msg);
+        access_cnt[ch]++;
+        total_access_cnt[ch]++;
+        task_cnt[ch]++;
+        total_task_cnt[ch]++;
+        return true;
+    }
     write_msg msg;
+    msg.pt = DMC_PATH;
     msg.pt = DMC_PATH;
     msg.num_256bit = trans->burst_length + 1;
 
@@ -1788,6 +1832,15 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id)
 {
     if (EM_ENABLE && EM_MODE == 0)
         channel = 0;
+    if (BYPASS_MODE) {
+        for (auto &msg : bypass_queue) {
+            if (msg.trans != NULL && msg.trans->task == id && msg.trans->transactionType == DATA_WRITE) {
+                msg.wdata_cnt++;
+                return true;
+            }
+        }
+        return false;
+    }
     bool first_upstream_beat = !IS_HBM3 || ((upstream_wdata_cnt[id] & 1) == 0);
     if (WRITE_BUFFER_ENABLE && ((mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->perf_pre_data_time ==
                                     mpfq_->getPFQ(channel / (NUM_CHANS / NUM_PFQS))->now()) ||
@@ -1852,6 +1905,46 @@ bool MemorySystemTop::addData(uint32_t *data, uint32_t channel, uint64_t id)
 
 void MemorySystemTop::update()
 {
+    for (size_t i = 0; i < bypass_queue.size();) {
+        bypass_message &msg = bypass_queue[i];
+        Transaction *trans = msg.trans;
+        bool done = false;
+        if (trans->transactionType == DATA_READ) {
+            if (!msg.rdata_done && now() >= msg.rdata_time) {
+                unsigned return_num = IS_HBM3 ? 2 : 1;
+                while (msg.rdata_cnt < trans->burst_length + 1) {
+                    if (!mpfq_->returnReadData(
+                            trans->channel, trans->task, double(now()) * tDFI,
+                            trans->reqAddToDmcTime, trans->reqEnterDmcBufTime)) {
+                        break;
+                    }
+                    msg.rdata_cnt += return_num;
+                }
+                msg.rdata_done = msg.rdata_cnt >= trans->burst_length + 1;
+            }
+            if (!msg.rresp_done && now() >= msg.rresp_time && mpfq_->ReadResp != NULL) {
+                msg.rresp_done = (*mpfq_->ReadResp)(
+                    trans->channel, trans->task, double(now()) * tDFI,
+                    trans->reqAddToDmcTime, trans->reqEnterDmcBufTime);
+            }
+            done = msg.rdata_done && msg.rresp_done;
+        } else {
+            if (!msg.wresp_done && msg.wdata_cnt >= trans->burst_length + 1 &&
+                now() >= msg.wresp_time && mpfq_->WriteResp != NULL) {
+                msg.wresp_done = (*mpfq_->WriteResp)(
+                    trans->channel, trans->task, double(now()) * tDFI,
+                    trans->reqAddToDmcTime, trans->reqEnterDmcBufTime);
+            }
+            done = msg.wresp_done;
+        }
+        if (done) {
+            delete trans;
+            bypass_queue.erase(bypass_queue.begin() + i);
+        } else {
+            i++;
+        }
+    }
+
     if (NUM_CHANS % NUM_PFQS != 0) {
         ERROR("NUM_CHANS / NUM_PFQS must be an integer.");
         ERROR("Current NUM_CHANS = " << NUM_CHANS);
@@ -1948,6 +2041,17 @@ uint32_t MemorySystemTop::getTransQueSize(uint32_t dmc_id, bool isRd)
         dmc_id = 0;
     uint32_t queRdNum = 0;
     uint32_t queWrNum = 0;
+    if (BYPASS_MODE) {
+        for (auto &msg : bypass_queue) {
+            if (msg.trans->channel != dmc_id)
+                continue;
+            if (msg.trans->transactionType == DATA_READ)
+                queRdNum++;
+            else
+                queWrNum++;
+        }
+        return isRd ? queRdNum : queWrNum;
+    }
     uint32_t size = mptc_->getPTC(dmc_id)->GetDmcQsize();
 
     for (uint32_t index = 0; index < size; index++) {
