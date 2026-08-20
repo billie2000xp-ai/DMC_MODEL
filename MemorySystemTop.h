@@ -41,6 +41,23 @@ struct data_message {
     size_t delay;
 };
 
+struct bypass_message {
+    Transaction *trans;
+    uint64_t rdata_time;
+    uint64_t rresp_time;
+    uint64_t wresp_time;
+    unsigned wdata_cnt;
+    unsigned rdata_cnt;
+    bool rdata_done;
+    bool rresp_done;
+    bool wresp_done;
+
+    bypass_message()
+        : trans(NULL), rdata_time(0), rresp_time(0), wresp_time(0), wdata_cnt(0), rdata_cnt(0),
+          rdata_done(false), rresp_done(false), wresp_done(false)
+    {}
+};
+
 class MRAS;
 class MPFQ;
 class MPTC;
@@ -122,6 +139,7 @@ public:
     std:: map<uint64_t, write_msg> write_map;
     std::map<uint64_t, unsigned> upstream_wdata_cnt;
     vector<vector<Transaction *>> PreDmcPipeQueue;
+    vector<bypass_message> bypass_queue;
 
     string dmc_log;
     // void update_print();
